@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NotesVault</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230D0D0F'/%3E%3Ccircle cx='12' cy='8.4' r='3.6' fill='%23D4D4D8'/%3E%3Cpath d='M10.1 12 L13.9 12 L15.3 19 C15.45 19.8 14.85 20.5 14.05 20.5 H9.95 C9.15 20.5 8.55 19.8 8.7 19 Z' fill='%23D4D4D8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,550;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+/* ============================================================
+   NOTESVAULT — DESIGN TOKENS
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  transition: background var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+h1, h2, h3 { margin: 0; font-weight: 550; }
+p { margin: 0; }
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+ul { margin: 0; padding: 0; list-style: none; }
+a { color: inherit; }
+
+:root {
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-full: 999px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-strong: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms; --dur-base: 220ms; --dur-slow: 380ms;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', sans-serif;
+  --sidebar-w: 232px;
+  --sidebar-w-collapsed: 68px;
+}
+
+[data-theme="light"] {
+  --bg: #FAFAFA; --surface: #FFFFFF; --surface-2: #F1F1F3;
+  --border: rgba(13,13,15,0.10); --border-strong: rgba(13,13,15,0.18);
+  --text-primary: #0D0D0F; --text-secondary: rgba(13,13,15,0.62); --text-tertiary: rgba(13,13,15,0.38);
+  --accent: #0D0D0F; --accent-hover: #26262A; --accent-text: #FAFAFA;
+  --danger: #5C2A2A; --danger-hover: #6E3333; --danger-text: #FBF3F3;
+  --danger-tint: rgba(92,42,42,0.08);
+  --focus-ring: #0D0D0F;
+  --shadow-sm: 0 1px 2px rgba(13,13,15,0.06);
+  --shadow-md: 0 6px 20px rgba(13,13,15,0.08);
+  --shadow-lg: 0 16px 40px rgba(13,13,15,0.14);
+  --sheen: linear-gradient(135deg, rgba(255,255,255,0.30), rgba(255,255,255,0) 55%);
+  --scrollbar: rgba(13,13,15,0.18);
+}
+[data-theme="dark"] {
+  --bg: #0D0D0F; --surface: #1C1C1F; --surface-2: #232327;
+  --border: rgba(212,212,216,0.10); --border-strong: rgba(212,212,216,0.20);
+  --text-primary: #D4D4D8; --text-secondary: rgba(212,212,216,0.64); --text-tertiary: rgba(212,212,216,0.40);
+  --accent: #0D0D0F; --accent-hover: #000000; --accent-text: #D4D4D8;
+  --danger: #5C2A2A; --danger-hover: #6E3333; --danger-text: #FBF3F3;
+  --danger-tint: rgba(92,42,42,0.18);
+  --focus-ring: #D4D4D8;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 6px 22px rgba(0,0,0,0.45);
+  --shadow-lg: 0 18px 44px rgba(0,0,0,0.55);
+  --sheen: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0) 55%);
+  --scrollbar: rgba(212,212,216,0.16);
+}
+[data-theme="amoled"] {
+  --bg: #000000; --surface: #0D0D0F; --surface-2: #131316;
+  --border: rgba(212,212,216,0.09); --border-strong: rgba(212,212,216,0.18);
+  --text-primary: #D4D4D8; --text-secondary: rgba(212,212,216,0.62); --text-tertiary: rgba(212,212,216,0.38);
+  --accent: #BF9B30; --accent-hover: #D4B24A; --accent-text: #14110A;
+  --danger: #5C2A2A; --danger-hover: #6E3333; --danger-text: #FBF3F3;
+  --danger-tint: rgba(92,42,42,0.22);
+  --focus-ring: #BF9B30;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.6);
+  --shadow-md: 0 6px 22px rgba(0,0,0,0.65);
+  --shadow-lg: 0 18px 44px rgba(0,0,0,0.75);
+  --sheen: linear-gradient(135deg, rgba(255,244,214,0.35), rgba(255,244,214,0) 55%);
+  --scrollbar: rgba(212,212,216,0.14);
+}
+
+/* Tag colors — muted, desaturated, distinct from accent/danger */
+.tag-amber   { --tag-c: #96773F; }
+.tag-sage    { --tag-c: #45735B; }
+.tag-steel   { --tag-c: #44628A; }
+.tag-mauve   { --tag-c: #86445F; }
+.tag-violet  { --tag-c: #634488; }
+.tag-stone   { --tag-c: #74746B; }
+
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--scrollbar) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: var(--radius-full); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Focus */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   BUTTONS & FORM ELEMENTS
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  border: 1px solid transparent; border-radius: var(--radius-md);
+  padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn-block { width: 100%; }
+.btn-primary {
+  position: relative; overflow: hidden;
+  background: var(--accent); color: var(--accent-text); border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary::before { content: ''; position: absolute; inset: 0; background: var(--sheen); pointer-events: none; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent; color: var(--text-primary); border-color: var(--border);
+}
+.btn-ghost:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.btn-danger {
+  background: var(--danger); color: var(--danger-text); border-color: var(--danger);
+}
+.btn-danger:hover { background: var(--danger-hover); }
+.btn-danger-ghost {
+  background: transparent; color: var(--danger); border-color: transparent;
+}
+.btn-danger-ghost:hover { background: var(--danger-tint); }
+.btn-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  background: transparent; border: 1px solid transparent; color: var(--text-secondary); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.btn-icon:hover { background: var(--surface-2); color: var(--text-primary); }
+.btn-icon svg { width: 18px; height: 18px; }
+.btn-icon.active { background: var(--surface-2); color: var(--text-primary); border-color: var(--border); }
+
+.field { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-4); text-align: left; }
+.field label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+input[type="text"], input[type="password"], input[type="email"], textarea, select.select {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 11px 14px; font-size: 14px; color: var(--text-primary);
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, select.select:focus {
+  border-color: var(--border-strong);
+}
+input::placeholder { color: var(--text-tertiary); }
+.password-field-inner { position: relative; display: flex; }
+.password-field-inner input { flex: 1; padding-right: 40px; }
+.btn-toggle-visibility {
+  position: absolute; right: 4px; top: 4px; bottom: 4px; width: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; color: var(--text-tertiary); cursor: pointer; border-radius: var(--radius-sm);
+}
+.btn-toggle-visibility:hover { color: var(--text-secondary); }
+.btn-toggle-visibility svg { width: 16px; height: 16px; }
+.field-hint { font-size: 12px; color: var(--text-tertiary); }
+.field-error { font-size: 12px; color: var(--danger); font-weight: 500; }
+
+/* Toggle switch */
+.toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.toggle-track {
+  position: absolute; inset: 0; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-full); transition: background var(--dur-base) var(--ease);
+}
+.toggle-thumb {
+  position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text-tertiary); transition: transform var(--dur-base) var(--ease-strong), background var(--dur-base) var(--ease);
+}
+.toggle-switch input:checked ~ .toggle-track { background: var(--accent); border-color: var(--border-strong); }
+.toggle-switch input:checked ~ .toggle-thumb { transform: translateX(18px); background: var(--accent-text); }
+
+/* Segmented control */
+.segmented { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px; gap: 2px; }
+.segmented-btn {
+  border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 7px; cursor: pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.segmented-btn.active { background: var(--accent); color: var(--accent-text); box-shadow: var(--shadow-sm); }
+.segmented-btn:not(.active):hover { color: var(--text-primary); }
+
+/* ============================================================
+   LOCK SCREEN
+   ============================================================ */
+.lock-screen {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); z-index: 100; padding: var(--space-5);
+}
+.lock-screen.hidden { display: none; }
+.lock-card {
+  width: 100%; max-width: 380px; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+.lock-card.unlocking { animation: lockCardOut var(--dur-base) var(--ease) forwards; }
+@keyframes lockCardOut { to { opacity: 0; transform: translateY(-14px); } }
+.lock-card.shake { animation: shake 380ms var(--ease); }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); } 40%, 60% { transform: translateX(7px); }
+}
+.lock-icon-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: var(--space-5); }
+.lock-icon {
+  position: relative; overflow: hidden; width: 60px; height: 60px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+.lock-icon::before { content: ''; position: absolute; inset: 0; background: var(--sheen); }
+.lock-icon svg { width: 26px; height: 26px; color: var(--accent-text); position: relative; z-index: 1; }
+.bolt-line {
+  width: 88px; height: 2px; background: var(--accent); margin-top: 18px;
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease-strong), opacity var(--dur-slow) var(--ease-strong);
+}
+.bolt-line.retract { transform: scaleX(0); opacity: 0; }
+.wordmark { font-family: var(--font-display); font-size: 28px; font-weight: 550; letter-spacing: -0.01em; margin-bottom: var(--space-2); }
+.lock-tagline { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: var(--space-6); max-width: 320px; }
+.lock-form { width: 100%; text-align: left; }
+.lock-warning {
+  display: flex; gap: var(--space-2); align-items: flex-start; text-align: left;
+  font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); margin-bottom: var(--space-4);
+}
+.lock-warning svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: var(--danger); }
+.lock-error {
+  min-height: 18px; font-size: 13px; color: var(--danger); font-weight: 500; margin-top: var(--space-3);
+}
+.lock-footer-hint { margin-top: var(--space-6); font-size: 12px; color: var(--text-tertiary); }
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app-shell { display: flex; height: 100vh; opacity: 1; }
+.app-shell[hidden] { display: none; }
+.app-shell.revealing { animation: fadeIn var(--dur-base) var(--ease); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: var(--space-4) var(--space-3);
+  transition: width var(--dur-base) var(--ease);
+}
+.sidebar.collapsed { width: var(--sidebar-w-collapsed); }
+.sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) var(--space-2) var(--space-5); gap: var(--space-2); }
+.sidebar.collapsed .sidebar-header { justify-content: center; }
+.wordmark-group { display: flex; align-items: center; gap: var(--space-2); overflow: hidden; }
+.sidebar.collapsed .wordmark-group { display: none; }
+.brand-mark {
+  position: relative; overflow: hidden; flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);
+}
+.brand-mark::before { content: ''; position: absolute; inset: 0; background: var(--sheen); }
+.brand-mark svg { width: 14px; height: 14px; color: var(--accent-text); position: relative; z-index: 1; }
+.wordmark-small { font-family: var(--font-display); font-size: 18px; font-weight: 550; white-space: nowrap; overflow: hidden; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: var(--space-3); padding: 10px 12px; border-radius: var(--radius-md);
+  background: transparent; border: none; color: var(--text-secondary); font-size: 14px; font-weight: 500;
+  cursor: pointer; text-align: left; width: 100%; position: relative;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.nav-item:hover { background: var(--surface-2); color: var(--text-primary); }
+.nav-item.active { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.nav-icon-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
+.sidebar.collapsed .nav-label { display: none; }
+.nav-badge {
+  position: absolute; top: -7px; right: -9px; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; padding: 0 4px; font-size: 10.5px; font-weight: 700; line-height: 1;
+  background: var(--surface-2); color: var(--text-secondary); border: 1.5px solid var(--surface); border-radius: var(--radius-full);
+}
+.nav-item.active .nav-badge { background: rgba(255,255,255,0.22); color: var(--accent-text); border-color: var(--accent); }
+.sidebar-footer {
+  display: flex; flex-direction: row; align-items: center; justify-content: center; gap: var(--space-2);
+  border-top: 1px solid var(--border); padding-top: var(--space-3); margin-top: var(--space-3);
+}
+.sidebar.collapsed .sidebar-footer { flex-direction: column; }
+.fold-btn svg { transition: transform var(--dur-base) var(--ease); }
+.sidebar.collapsed .fold-btn svg { transform: rotate(180deg); }
+.sidebar-backdrop { display: none; }
+
+.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+.content-header {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+  padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--border); flex-shrink: 0; min-height: 68px;
+}
+.header-title { font-family: var(--font-display); font-size: 21px; font-weight: 550; letter-spacing: -0.01em; }
+.header-left { display: flex; align-items: center; gap: var(--space-3); }
+.menu-btn { display: none; }
+.tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.tab-panel[hidden] { display: none; }
+
+/* ============================================================
+   NOTES TAB
+   ============================================================ */
+.notes-panel { flex: 1; display: flex; flex-direction: row; min-height: 0; }
+.notes-list-pane { width: 264px; flex-shrink: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+.list-toolbar { display: flex; gap: var(--space-2); padding: var(--space-4); border-bottom: 1px solid var(--border); }
+.search-box { flex: 1; position: relative; display: flex; align-items: center; }
+.search-box svg { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--text-tertiary); pointer-events: none; }
+.search-box input { width: 100%; padding-left: 36px; }
+.btn-new {
+  position: relative; overflow: hidden; flex-shrink: 0; width: 40px; height: 40px; border-radius: var(--radius-md);
+  background: var(--accent); border: 1px solid var(--border-strong); color: var(--accent-text);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.btn-new::before { content: ''; position: absolute; inset: 0; background: var(--sheen); }
+.btn-new svg { width: 18px; height: 18px; position: relative; z-index: 1; }
+.btn-new:hover { background: var(--accent-hover); }
+
+.notes-list { flex: 1; overflow-y: auto; padding: var(--space-2); }
+.note-item {
+  display: flex; flex-direction: column; gap: 4px; padding: var(--space-3); border-radius: var(--radius-md);
+  cursor: pointer; border: 1px solid transparent; margin-bottom: 2px;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.note-item:hover { background: var(--surface-2); }
+.note-item.active { background: var(--surface-2); border-color: var(--border-strong); }
+.note-item-top { display: flex; align-items: center; gap: 6px; }
+.note-item-title { font-size: 14px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-item-title.untitled { color: var(--text-tertiary); font-weight: 500; }
+.note-item.pinned .pin-indicator { display: inline-flex; color: var(--text-secondary); flex-shrink: 0; }
+.note-item .pin-indicator { display: none; }
+.note-item .pin-indicator svg { width: 12px; height: 12px; }
+.note-item-snippet { font-size: 12.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
+.note-item-meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
+.note-item-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.mini-tag { font-size: 10.5px; font-weight: 600; color: var(--tag-c); }
+.mini-tag::before { content: '#'; opacity: 0.7; }
+
+.editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.editor-empty-state, .empty-state {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3);
+  color: var(--text-tertiary); padding: var(--space-6); text-align: center;
+}
+.editor-empty-state svg, .empty-state svg { width: 34px; height: 34px; opacity: 0.5; }
+.editor-empty-state p, .empty-state p { font-size: 14px; max-width: 280px; line-height: 1.5; }
+
+.editor { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.editor-toolbar {
+  display: flex; align-items: center; gap: 2px; padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
+}
+.toolbar-btn {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm);
+  background: transparent; border: 1px solid transparent; color: var(--text-secondary); cursor: pointer;
+}
+.toolbar-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+.toolbar-btn.active-state { background: var(--surface-2); border-color: var(--border); color: var(--text-primary); }
+.toolbar-btn svg { width: 16px; height: 16px; }
+.toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 var(--space-2); }
+.toolbar-spacer { flex: 1; }
+
+.editor-scroll { flex: 1; overflow-y: auto; padding: var(--space-6) var(--space-6) var(--space-7); }
+.editor-title {
+  width: 100%; border: none; background: transparent; font-size: 26px; font-weight: 650; font-family: var(--font-display);
+  color: var(--text-primary); padding: 0; margin-bottom: var(--space-3); letter-spacing: -0.01em;
+}
+.editor-title::placeholder { color: var(--text-tertiary); }
+.editor-tags-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-5); position: relative; }
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 12px; border-radius: var(--radius-full);
+  font-size: 12.5px; font-weight: 600; color: var(--tag-c); background: color-mix(in srgb, var(--tag-c) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-c) 30%, transparent);
+}
+.tag-chip button { background: none; border: none; color: inherit; cursor: pointer; display: flex; opacity: 0.7; padding: 0; }
+.tag-chip button:hover { opacity: 1; }
+.tag-chip button svg { width: 11px; height: 11px; }
+.btn-add-tag {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: var(--radius-full);
+  font-size: 12.5px; font-weight: 600; color: var(--text-tertiary); background: transparent; border: 1px dashed var(--border-strong); cursor: pointer;
+}
+.btn-add-tag:hover { color: var(--text-secondary); border-color: var(--text-tertiary); }
+.btn-add-tag svg { width: 12px; height: 12px; }
+
+.tag-popover {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 20; width: 240px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: var(--space-3);
+}
+.tag-swatches { display: flex; gap: 6px; margin-bottom: var(--space-3); flex-wrap: wrap; }
+.tag-swatch {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--tag-c); border: 2px solid transparent; cursor: pointer; padding: 0;
+}
+.tag-swatch.selected { border-color: var(--text-primary); }
+.tag-popover-row { display: flex; gap: 6px; }
+.tag-popover-row input { flex: 1; padding: 8px 10px; font-size: 13px; }
+.tag-popover-row button { flex-shrink: 0; }
+
+.editor-body {
+  min-height: 240px; font-size: 15px; line-height: 1.75; color: var(--text-primary); outline: none;
+}
+.editor-body:empty::before { content: attr(data-placeholder); color: var(--text-tertiary); pointer-events: none; }
+.editor-body ul, .editor-body ol { padding-left: 1.4em; margin: 0.6em 0; }
+.editor-body b, .editor-body strong { font-weight: 700; }
+.editor-meta { padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-tertiary); flex-shrink: 0; }
+
+/* ============================================================
+   TRASH TAB
+   ============================================================ */
+.panel-header { padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-shrink: 0; }
+.panel-title { font-family: var(--font-display); font-size: 20px; font-weight: 550; margin-bottom: 4px; }
+.panel-subtitle { font-size: 13px; color: var(--text-secondary); max-width: 420px; line-height: 1.5; }
+.trash-body { flex: 1; overflow-y: auto; padding: var(--space-3) var(--space-4); }
+.trash-item {
+  display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  border: 1px solid var(--border); margin-bottom: var(--space-2); background: var(--surface);
+}
+.trash-item-main { flex: 1; min-width: 0; }
+.trash-item-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-item-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.trash-item-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+
+/* ============================================================
+   SETTINGS TAB
+   ============================================================ */
+.settings-scroll { flex: 1; overflow-y: auto; }
+.settings-content { max-width: 620px; margin: 0 auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-6); }
+.settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-5); }
+.settings-section h2 { font-family: var(--font-display); font-size: 17px; font-weight: 550; margin-bottom: var(--space-4); }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--border); }
+.setting-row:first-of-type { border-top: none; padding-top: 0; }
+.setting-row-label { font-size: 14px; font-weight: 500; }
+.setting-row-desc { font-size: 12.5px; color: var(--text-tertiary); margin-top: 2px; }
+.setting-row-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.about-tagline { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-3); }
+.version-badge {
+  display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary);
+  padding: 3px 9px; border-radius: var(--radius-full); margin-bottom: var(--space-5);
+}
+.changelog h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); margin-bottom: var(--space-3); }
+.changelog-item { display: flex; gap: var(--space-3); padding: var(--space-2) 0; font-size: 13px; }
+.changelog-version { font-weight: 700; color: var(--text-primary); flex-shrink: 0; width: 56px; }
+.changelog-date { color: var(--text-tertiary); flex-shrink: 0; width: 64px; }
+.changelog-note { color: var(--text-secondary); }
+.built-by { font-size: 12.5px; color: var(--text-tertiary); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.built-by a { color: var(--text-secondary); font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--border-strong); }
+.built-by a:hover { color: var(--text-primary); }
+
+/* ============================================================
+   MODAL & TOAST
+   ============================================================ */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: var(--space-4); animation: fadeIn var(--dur-fast) var(--ease);
+}
+.modal {
+  width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-lg);
+  animation: modalIn var(--dur-base) var(--ease-strong);
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.modal-title { font-family: var(--font-display); font-size: 18px; font-weight: 550; margin-bottom: var(--space-2); }
+.modal-message { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: var(--space-5); }
+.modal-actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
+
+.toast-container { position: fixed; bottom: var(--space-5); right: var(--space-5); z-index: 300; display: flex; flex-direction: column; gap: var(--space-2); }
+.toast {
+  background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-primary);
+  padding: 12px 18px; border-radius: var(--radius-md); font-size: 13.5px; font-weight: 500; box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; gap: var(--space-2); animation: toastIn var(--dur-base) var(--ease-strong);
+}
+.toast svg { width: 16px; height: 16px; flex-shrink: 0; }
+.toast.success svg { color: #4A8A6A; }
+.toast.danger svg { color: var(--danger); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.toast.leaving { animation: toastOut var(--dur-fast) var(--ease) forwards; }
+@keyframes toastOut { to { opacity: 0; transform: translateY(6px); } }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 860px) {
+  .menu-btn { display: flex; }
+  .sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: 250px;
+    transform: translateX(-100%); transition: transform var(--dur-base) var(--ease); box-shadow: var(--shadow-lg);
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar.collapsed { width: 250px; }
+  .sidebar.collapsed .sidebar-header { justify-content: space-between; }
+  .sidebar.collapsed .wordmark-group { display: flex; }
+  .sidebar.collapsed .nav-label { display: inline; }
+  .sidebar.collapsed .sidebar-footer { flex-direction: row; }
+  .sidebar-backdrop.show {
+    display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 55; animation: fadeIn var(--dur-fast) var(--ease);
+  }
+  .notes-panel { position: relative; overflow: hidden; }
+  .notes-list-pane { position: absolute; inset: 0; width: 100%; transition: transform var(--dur-base) var(--ease); z-index: 2; background: var(--bg); }
+  .editor-pane { position: absolute; inset: 0; width: 100%; transform: translateX(100%); transition: transform var(--dur-base) var(--ease); background: var(--bg); }
+  .notes-panel.mobile-show-editor .notes-list-pane { transform: translateX(-100%); }
+  .notes-panel.mobile-show-editor .editor-pane { transform: translateX(0); }
+  .editor-back-btn { display: flex !important; }
+  .content-header { padding: var(--space-3) var(--space-4); }
+  .settings-content { padding: var(--space-4); }
+}
+.editor-back-btn { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOCK SCREEN
+     ============================================================ -->
+<div id="lock-screen" class="lock-screen">
+  <div class="lock-card" id="lock-card">
+    <div class="lock-icon-wrap">
+      <div class="lock-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8.4" r="3.6" fill="currentColor"/><path d="M10.1 12 L13.9 12 L15.3 19 C15.45 19.8 14.85 20.5 14.05 20.5 H9.95 C9.15 20.5 8.55 19.8 8.7 19 Z" fill="currentColor"/></svg></div>
+      <div class="bolt-line" id="bolt-line"></div>
+    </div>
+    <h1 class="wordmark">NotesVault</h1>
+    <p class="lock-tagline" id="lock-tagline">Enter your master password to unlock your notes.</p>
+    <form class="lock-form" id="unlock-form"></form>
+    <p class="lock-error" id="lock-error" role="alert" aria-live="polite"></p>
+    <p class="lock-footer-hint">Zero-knowledge · encrypted locally · never leaves this device</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div class="app-shell" id="app-shell" hidden>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="wordmark-group">
+        <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8.4" r="3.6" fill="currentColor"/><path d="M10.1 12 L13.9 12 L15.3 19 C15.45 19.8 14.85 20.5 14.05 20.5 H9.95 C9.15 20.5 8.55 19.8 8.7 19 Z" fill="currentColor"/></svg></div>
+        <span class="wordmark-small">NotesVault</span>
+      </div>
+      <button class="btn-icon fold-btn" id="fold-btn" aria-label="Collapse sidebar"><i data-lucide="panel-left-close"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item" data-tab="notes"><span class="nav-icon-wrap"><i data-lucide="file-text"></i></span><span class="nav-label">Notes</span></button>
+      <button class="nav-item" data-tab="trash"><span class="nav-icon-wrap"><i data-lucide="trash-2"></i><span class="nav-badge" id="trash-badge" style="display:none;">0</span></span><span class="nav-label">Trash</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-icon" id="settings-btn" aria-label="Settings" title="Settings"><i data-lucide="settings"></i></button>
+      <button class="btn-icon" id="theme-toggle-btn" aria-label="Change theme" title="Theme: Auto"><i data-lucide="monitor"></i></button>
+      <button class="btn-icon" id="lock-btn" aria-label="Lock vault" title="Lock vault"><i data-lucide="lock"></i></button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="content-header" id="content-header">
+      <div class="header-left">
+        <button class="btn-icon menu-btn" id="menu-btn" aria-label="Open menu"><i data-lucide="menu"></i></button>
+        <h1 class="header-title" id="header-title">Notes</h1>
+      </div>
+      <div class="header-actions" id="header-actions"></div>
+    </header>
+
+    <div class="tab-panel notes-panel" id="tab-notes">
+      <div class="notes-list-pane">
+        <div class="list-toolbar">
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="search-input" placeholder="Search notes" aria-label="Search notes">
+          </div>
+          <button class="btn-new" id="new-note-btn" aria-label="New note"><i data-lucide="plus"></i></button>
+        </div>
+        <div class="notes-list" id="notes-list"></div>
+      </div>
+      <div class="editor-pane" id="editor-pane"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-trash" hidden>
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Trash</h2>
+          <p class="panel-subtitle">Deleted notes stay here for 30 days, then they're purged automatically.</p>
+        </div>
+        <button class="btn-danger-ghost btn" id="empty-trash-btn"><i data-lucide="trash-2"></i>Empty Trash</button>
+      </div>
+      <div class="trash-body" id="trash-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-settings" hidden>
+      <div class="panel-header">
+        <div><h2 class="panel-title">Settings</h2></div>
+      </div>
+      <div class="settings-scroll">
+        <div class="settings-content" id="settings-content"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container" aria-live="polite"></div>
+<div id="modal-root"></div>
+<input type="file" id="import-file-input" accept="application/json" style="display:none;">
+
+<script>
+(function () {
+'use strict';
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+var PBKDF2_ITERATIONS = 300000;
+var VERIFIER_MARKER = { check: 'notesvault-v1' };
+var TRASH_RETENTION_DAYS = 30;
+var APP_VERSION = '1.0.1';
+var CHANGELOG = [
+  { version: '1.0.1', date: 'Aug 2026', note: 'Fixed the Notes split layout, warmed the AMOLED accent to gold, added a delete confirmation, and streamlined the sidebar.' },
+  { version: '1.0.0', date: 'Aug 2026', note: 'Initial release — zero-knowledge encrypted notes, trash, and vault settings.' }
+];
+var TAG_COLORS = [
+  { id: 'amber', label: 'Amber' },
+  { id: 'sage', label: 'Sage' },
+  { id: 'steel', label: 'Steel' },
+  { id: 'mauve', label: 'Mauve' },
+  { id: 'violet', label: 'Violet' },
+  { id: 'stone', label: 'Stone' }
+];
+var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   DOM HELPERS
+   ============================================================ */
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function on(el, ev, fn) { if (el) el.addEventListener(ev, fn); }
+function icons() { if (window.lucide) window.lucide.createIcons(); }
+function escapeHtml(str) {
+  var d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+function stripHtml(html) {
+  var d = document.createElement('div');
+  d.innerHTML = html || '';
+  return d.textContent || '';
+}
+function uuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function formatDateTime(ts) {
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' · ' + new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+function daysLeft(deletedAt) {
+  var elapsed = (Date.now() - deletedAt) / 86400000;
+  return Math.max(0, Math.ceil(TRASH_RETENTION_DAYS - elapsed));
+}
+
+/* ============================================================
+   CRYPTO — zero-knowledge helpers (Web Crypto API only)
+   ============================================================ */
+function bufToB64(bytes) {
+  var binary = '', chunk = 0x8000;
+  for (var i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+function b64ToBuf(b64) {
+  var binary = atob(b64), bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+async function deriveKey(password, saltBytes, iterations) {
+  var enc = new TextEncoder();
+  var baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: saltBytes, iterations: iterations, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+async function encryptObj(key, obj) {
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  var data = new TextEncoder().encode(JSON.stringify(obj));
+  var cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, data);
+  return { iv: bufToB64(iv), cipher: bufToB64(new Uint8Array(cipherBuf)) };
+}
+async function decryptObj(key, ivB64, cipherB64) {
+  var iv = b64ToBuf(ivB64), cipherBuf = b64ToBuf(cipherB64);
+  var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, cipherBuf);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+
+/* ============================================================
+   INDEXEDDB — encrypted storage
+   ============================================================ */
+var DB_NAME = 'notesvault-db', DB_VERSION = 1;
+function openDB() {
+  return new Promise(function (resolve, reject) {
+    var req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = function (e) {
+      var d = e.target.result;
+      if (!d.objectStoreNames.contains('vault')) d.createObjectStore('vault', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('notes')) d.createObjectStore('notes', { keyPath: 'id' });
+    };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+  });
+}
+function idbGet(store, key) {
+  return new Promise(function (resolve, reject) {
+    var tx = db.transaction(store, 'readonly').objectStore(store).get(key);
+    tx.onsuccess = function () { resolve(tx.result || null); };
+    tx.onerror = function () { reject(tx.error); };
+  });
+}
+function idbGetAll(store) {
+  return new Promise(function (resolve, reject) {
+    var tx = db.transaction(store, 'readonly').objectStore(store).getAll();
+    tx.onsuccess = function () { resolve(tx.result || []); };
+    tx.onerror = function () { reject(tx.error); };
+  });
+}
+function idbPut(store, value) {
+  return new Promise(function (resolve, reject) {
+    var tx = db.transaction(store, 'readwrite').objectStore(store).put(value);
+    tx.onsuccess = function () { resolve(); };
+    tx.onerror = function () { reject(tx.error); };
+  });
+}
+function idbDelete(store, key) {
+  return new Promise(function (resolve, reject) {
+    var tx = db.transaction(store, 'readwrite').objectStore(store).delete(key);
+    tx.onsuccess = function () { resolve(); };
+    tx.onerror = function () { reject(tx.error); };
+  });
+}
+function idbClear(store) {
+  return new Promise(function (resolve, reject) {
+    var tx = db.transaction(store, 'readwrite').objectStore(store).clear();
+    tx.onsuccess = function () { resolve(); };
+    tx.onerror = function () { reject(tx.error); };
+  });
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+var db = null;
+var vaultKey = null;
+var notes = [];              // decrypted, in-memory only while unlocked
+var currentTab = 'notes';
+var selectedNoteId = null;
+var mobileShowEditor = false;
+var searchQuery = '';
+var saveTimer = null;
+var pendingNote = null;
+var idleTimer = null;
+var lockMode = 'unlock';     // 'setup' | 'unlock' | 'imported'
+var openTagPopoverNoteId = null;
+var tagPopoverColor = TAG_COLORS[0].id;
+
+var prefs = {
+  theme: localStorage.getItem('nv_theme') || 'auto',
+  sidebarCollapsed: localStorage.getItem('nv_sidebar_collapsed') === '1',
+  autoLockMinutes: localStorage.getItem('nv_autolock') || '5',
+  lockOnBlur: localStorage.getItem('nv_lock_on_blur') === '1'
+};
+function savePrefs() {
+  localStorage.setItem('nv_theme', prefs.theme);
+  localStorage.setItem('nv_sidebar_collapsed', prefs.sidebarCollapsed ? '1' : '0');
+  localStorage.setItem('nv_autolock', prefs.autoLockMinutes);
+  localStorage.setItem('nv_lock_on_blur', prefs.lockOnBlur ? '1' : '0');
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+var THEME_ICONS = { auto: 'monitor', light: 'sun', dark: 'moon', amoled: 'contrast' };
+var THEME_LABELS = { auto: 'Auto theme', light: 'Light theme', dark: 'Dark theme', amoled: 'AMOLED theme' };
+function resolvedTheme() {
+  if (prefs.theme === 'auto') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return prefs.theme;
+}
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', resolvedTheme());
+  var btn = $('#theme-toggle-btn');
+  if (btn) {
+    var existingIcon = btn.querySelector('svg, i[data-lucide]');
+    if (existingIcon) existingIcon.remove();
+    var i = document.createElement('i');
+    i.setAttribute('data-lucide', THEME_ICONS[prefs.theme]);
+    btn.insertBefore(i, btn.firstChild);
+    var label = 'Theme: ' + THEME_LABELS[prefs.theme];
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+  }
+  renderThemeSwitcherState();
+  icons();
+}
+function cycleTheme() {
+  var order = ['auto', 'light', 'dark', 'amoled'];
+  var idx = order.indexOf(prefs.theme);
+  prefs.theme = order[(idx + 1) % order.length];
+  savePrefs();
+  applyTheme();
+}
+function setTheme(t) {
+  prefs.theme = t;
+  savePrefs();
+  applyTheme();
+}
+function renderThemeSwitcherState() {
+  $all('.segmented-btn[data-theme-choice]').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-theme-choice') === prefs.theme);
+  });
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+  if (prefs.theme === 'auto') applyTheme();
+});
+
+/* ============================================================
+   TOASTS & MODALS
+   ============================================================ */
+function showToast(message, type) {
+  var container = $('#toast-container');
+  var el = document.createElement('div');
+  el.className = 'toast ' + (type || 'info');
+  var iconName = type === 'success' ? 'check-circle' : (type === 'danger' ? 'alert-triangle' : 'info');
+  el.innerHTML = '<i data-lucide="' + iconName + '"></i><span>' + escapeHtml(message) + '</span>';
+  container.appendChild(el);
+  icons();
+  setTimeout(function () {
+    el.classList.add('leaving');
+    setTimeout(function () { el.remove(); }, 160);
+  }, 3200);
+}
+function showConfirm(opts) {
+  var root = $('#modal-root');
+  root.innerHTML =
+    '<div class="modal-backdrop" id="confirm-backdrop">' +
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<h3 class="modal-title">' + escapeHtml(opts.title) + '</h3>' +
+        '<p class="modal-message">' + escapeHtml(opts.message) + '</p>' +
+        '<div class="modal-actions">' +
+          '<button class="btn btn-ghost" id="confirm-cancel">Cancel</button>' +
+          '<button class="btn ' + (opts.danger ? 'btn-danger' : 'btn-primary') + '" id="confirm-ok">' + escapeHtml(opts.confirmLabel || 'Confirm') + '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  function close() { root.innerHTML = ''; }
+  on($('#confirm-cancel'), 'click', close);
+  on($('#confirm-backdrop'), 'click', function (e) { if (e.target.id === 'confirm-backdrop') close(); });
+  on($('#confirm-ok'), 'click', function () { close(); opts.onConfirm && opts.onConfirm(); });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+async function init() {
+  applyTheme();
+  if (prefs.sidebarCollapsed) $('#sidebar').classList.add('collapsed');
+  icons();
+  try {
+    db = await openDB();
+  } catch (err) {
+    $('#lock-tagline').textContent = 'This browser could not open local storage. Try a different browser or disable private browsing.';
+    return;
+  }
+  var config = await idbGet('vault', 'config');
+  lockMode = config ? 'unlock' : 'setup';
+  renderLockScreen(lockMode);
+  bindGlobalEvents();
+}
+
+/* ============================================================
+   LOCK SCREEN RENDERING
+   ============================================================ */
+function renderLockScreen(mode) {
+  lockMode = mode;
+  var form = $('#unlock-form');
+  var tagline = $('#lock-tagline');
+  $('#lock-error').textContent = '';
+
+  if (mode === 'setup') {
+    tagline.textContent = 'Create a master password to encrypt your notes. Nothing is ever stored or sent anywhere else.';
+    form.innerHTML =
+      '<div class="field password-field">' +
+        '<label for="pw-new">Create master password</label>' +
+        '<div class="password-field-inner">' +
+          '<input type="password" id="pw-new" autocomplete="new-password" required minlength="8">' +
+          '<button type="button" class="btn-toggle-visibility" data-target="pw-new" aria-label="Show password"><i data-lucide="eye"></i></button>' +
+        '</div>' +
+        '<span class="field-hint">At least 8 characters.</span>' +
+      '</div>' +
+      '<div class="field password-field">' +
+        '<label for="pw-confirm">Confirm master password</label>' +
+        '<div class="password-field-inner">' +
+          '<input type="password" id="pw-confirm" autocomplete="new-password" required minlength="8">' +
+          '<button type="button" class="btn-toggle-visibility" data-target="pw-confirm" aria-label="Show password"><i data-lucide="eye"></i></button>' +
+        '</div>' +
+      '</div>' +
+      '<p class="lock-warning"><i data-lucide="shield-alert"></i><span>This vault is zero-knowledge: there is no password recovery. If you lose this password, your notes are lost for good.</span></p>' +
+      '<button type="submit" class="btn btn-primary btn-block">Create Vault</button>';
+  } else {
+    tagline.textContent = mode === 'imported'
+      ? 'Vault imported. Enter the master password for this backup to unlock it.'
+      : 'Enter your master password to unlock your notes.';
+    form.innerHTML =
+      '<div class="field password-field">' +
+        '<label for="pw-unlock">Master password</label>' +
+        '<div class="password-field-inner">' +
+          '<input type="password" id="pw-unlock" autocomplete="current-password" required autofocus>' +
+          '<button type="button" class="btn-toggle-visibility" data-target="pw-unlock" aria-label="Show password"><i data-lucide="eye"></i></button>' +
+        '</div>' +
+      '</div>' +
+      '<button type="submit" class="btn btn-primary btn-block">Unlock</button>';
+  }
+  icons();
+  $all('.btn-toggle-visibility', form).forEach(function (btn) {
+    on(btn, 'click', function () {
+      var target = $('#' + btn.getAttribute('data-target'));
+      var showing = target.type === 'text';
+      target.type = showing ? 'password' : 'text';
+      btn.innerHTML = '<i data-lucide="' + (showing ? 'eye' : 'eye-off') + '"></i>';
+      icons();
+    });
+  });
+  var firstInput = form.querySelector('input');
+  if (firstInput) setTimeout(function () { firstInput.focus(); }, reducedMotion ? 0 : 50);
+}
+
+on(document, 'submit', function (e) {
+  if (e.target.id === 'unlock-form') {
+    e.preventDefault();
+    if (lockMode === 'setup') handleSetupSubmit();
+    else handleUnlockSubmit();
+  }
+});
+
+function lockCardShake() {
+  var card = $('#lock-card');
+  card.classList.add('shake');
+  setTimeout(function () { card.classList.remove('shake'); }, 400);
+}
+
+async function handleSetupSubmit() {
+  var pw = $('#pw-new').value, confirm = $('#pw-confirm').value;
+  var errEl = $('#lock-error');
+  if (pw.length < 8) { errEl.textContent = 'Use at least 8 characters.'; return; }
+  if (pw !== confirm) { errEl.textContent = "Passwords don't match."; lockCardShake(); return; }
+  errEl.textContent = '';
+  var submitBtn = $('#unlock-form button[type="submit"]');
+  submitBtn.disabled = true; submitBtn.textContent = 'Creating vault…';
+
+  var salt = crypto.getRandomValues(new Uint8Array(16));
+  var key = await deriveKey(pw, salt, PBKDF2_ITERATIONS);
+  var verifier = await encryptObj(key, VERIFIER_MARKER);
+  await idbPut('vault', {
+    id: 'config', salt: bufToB64(salt), iterations: PBKDF2_ITERATIONS,
+    verifierIv: verifier.iv, verifierCipher: verifier.cipher, createdAt: Date.now()
+  });
+  vaultKey = key;
+  notes = [];
+  completeUnlock();
+}
+
+async function handleUnlockSubmit() {
+  var pw = $('#pw-unlock').value;
+  var errEl = $('#lock-error');
+  var submitBtn = $('#unlock-form button[type="submit"]');
+  submitBtn.disabled = true; submitBtn.textContent = 'Unlocking…';
+  try {
+    var config = await idbGet('vault', 'config');
+    if (!config) throw new Error('no-vault');
+    var salt = b64ToBuf(config.salt);
+    var key = await deriveKey(pw, salt, config.iterations);
+    var check = await decryptObj(key, config.verifierIv, config.verifierCipher);
+    if (!check || check.check !== VERIFIER_MARKER.check) throw new Error('bad-password');
+
+    var rawNotes = await idbGetAll('notes');
+    var decrypted = [];
+    for (var i = 0; i < rawNotes.length; i++) {
+      try {
+        var plain = await decryptObj(key, rawNotes[i].iv, rawNotes[i].cipher);
+        plain.id = rawNotes[i].id;
+        decrypted.push(plain);
+      } catch (e2) { /* skip unreadable record */ }
+    }
+    vaultKey = key;
+    notes = decrypted;
+    purgeExpiredTrash();
+    errEl.textContent = '';
+    completeUnlock();
+  } catch (err) {
+    submitBtn.disabled = false; submitBtn.textContent = 'Unlock';
+    errEl.textContent = 'Incorrect password. Try again.';
+    lockCardShake();
+    var f = $('#pw-unlock'); if (f) { f.value = ''; f.focus(); }
+  }
+}
+
+function completeUnlock() {
+  playUnlockAnimation(function () {
+    $('#app-shell').hidden = false;
+    $('#app-shell').classList.add('revealing');
+    setTimeout(function () { $('#app-shell').classList.remove('revealing'); }, 260);
+    currentTab = 'notes';
+    selectedNoteId = null;
+    renderApp();
+    startIdleTimer();
+    icons();
+  });
+}
+
+function playUnlockAnimation(onDone) {
+  if (reducedMotion) {
+    $('#lock-screen').classList.add('hidden');
+    onDone();
+    return;
+  }
+  var bolt = $('#bolt-line'), card = $('#lock-card');
+  bolt.classList.add('retract');
+  setTimeout(function () {
+    card.classList.add('unlocking');
+    setTimeout(function () {
+      $('#lock-screen').classList.add('hidden');
+      bolt.classList.remove('retract');
+      card.classList.remove('unlocking');
+      var submitBtn = $('#unlock-form button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = lockMode === 'setup' ? 'Create Vault' : 'Unlock'; }
+      onDone();
+    }, 220);
+  }, 380);
+}
+
+/* ============================================================
+   LOCK VAULT
+   ============================================================ */
+function lockVault() {
+  flushPendingSave(true);
+  stopIdleTimer();
+  vaultKey = null;
+  notes = [];
+  selectedNoteId = null;
+  openTagPopoverNoteId = null;
+  $('#app-shell').hidden = true;
+  $('#lock-screen').classList.remove('hidden');
+  renderLockScreen('unlock');
+}
+
+/* A single window-blur listener covers both switching browser tabs and
+   switching away to another application — visibilitychange alone would miss the latter. */
+window.addEventListener('blur', function () {
+  if (prefs.lockOnBlur && vaultKey) lockVault();
+});
+
+/* Idle auto-lock */
+function startIdleTimer() {
+  stopIdleTimer();
+  if (prefs.autoLockMinutes === 'never') return;
+  var ms = parseInt(prefs.autoLockMinutes, 10) * 60000;
+  idleTimer = setTimeout(function () { lockVault(); showToast('Vault locked after inactivity', 'info'); }, ms);
+}
+function stopIdleTimer() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
+function resetIdleTimer() { if (vaultKey) startIdleTimer(); }
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (ev) {
+  document.addEventListener(ev, function () { if (vaultKey) resetIdleTimer(); }, { passive: true });
+});
+
+/* ============================================================
+   APP RENDER DISPATCH
+   ============================================================ */
+function renderApp() {
+  $all('.nav-item').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === currentTab); });
+  var settingsBtn = $('#settings-btn');
+  if (settingsBtn) settingsBtn.classList.toggle('active', currentTab === 'settings');
+  $('#tab-notes').hidden = currentTab !== 'notes';
+  $('#tab-trash').hidden = currentTab !== 'trash';
+  $('#tab-settings').hidden = currentTab !== 'settings';
+  var titles = { notes: 'Notes', trash: 'Trash', settings: 'Settings' };
+  $('#header-title').textContent = titles[currentTab];
+  renderHeaderActions();
+
+  if (currentTab === 'notes') { renderNotesList(); renderEditor(); }
+  else if (currentTab === 'trash') { renderTrashList(); }
+  else if (currentTab === 'settings') { renderSettings(); }
+
+  updateTrashBadge();
+  icons();
+}
+function switchTab(tab) {
+  if (currentTab === 'notes') flushPendingSave(false);
+  currentTab = tab;
+  closeMobileSidebar();
+  renderApp();
+}
+function renderHeaderActions() {
+  $('#header-actions').innerHTML = '';
+}
+function updateTrashBadge() {
+  var count = notes.filter(function (n) { return n.deleted; }).length;
+  var badge = $('#trash-badge');
+  badge.textContent = count;
+  badge.style.display = count > 0 ? 'inline-flex' : 'none';
+}
+
+/* ============================================================
+   NOTES LIST
+   ============================================================ */
+function visibleNotes() {
+  var q = searchQuery.trim().toLowerCase();
+  var list = notes.filter(function (n) { return !n.deleted; });
+  if (q) {
+    list = list.filter(function (n) {
+      var text = (n.title || '') + ' ' + stripHtml(n.body || '') + ' ' + (n.tags || []).map(function (t) { return t.label; }).join(' ');
+      return text.toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  list.sort(function (a, b) {
+    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    return (b.modifiedAt || 0) - (a.modifiedAt || 0);
+  });
+  return list;
+}
+function renderNotesList() {
+  var container = $('#notes-list');
+  var scrollTop = container.scrollTop;
+  var list = visibleNotes();
+
+  if (notes.filter(function (n) { return !n.deleted; }).length === 0) {
+    container.innerHTML = '<div class="empty-state"><i data-lucide="file-text"></i><p>No notes yet. Tap the + button to create your first note.</p></div>';
+    icons();
+    return;
+  }
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i data-lucide="search-x"></i><p>No notes match your search.</p></div>';
+    icons();
+    return;
+  }
+
+  container.innerHTML = list.map(function (n) {
+    var title = n.title && n.title.trim() ? escapeHtml(n.title) : 'Untitled note';
+    var titleClass = n.title && n.title.trim() ? '' : ' untitled';
+    var snippet = escapeHtml(stripHtml(n.body || '').slice(0, 140)) || 'No additional text';
+    var tagsHtml = (n.tags || []).slice(0, 3).map(function (t) {
+      return '<span class="mini-tag tag-' + t.colorId + '">' + escapeHtml(t.label) + '</span>';
+    }).join('');
+    return (
+      '<div class="note-item' + (n.id === selectedNoteId ? ' active' : '') + (n.pinned ? ' pinned' : '') + '" data-id="' + n.id + '" tabindex="0" role="button" aria-label="Open note ' + title + '">' +
+        '<div class="note-item-top">' +
+          '<span class="note-item-title' + titleClass + '">' + title + '</span>' +
+          '<span class="pin-indicator"><i data-lucide="pin"></i></span>' +
+        '</div>' +
+        '<div class="note-item-snippet">' + snippet + '</div>' +
+        (tagsHtml ? '<div class="note-item-tags">' + tagsHtml + '</div>' : '') +
+        '<div class="note-item-meta"><span>' + formatDate(n.modifiedAt) + '</span></div>' +
+      '</div>'
+    );
+  }).join('');
+  container.scrollTop = scrollTop;
+  icons();
+
+  $all('.note-item', container).forEach(function (el) {
+    on(el, 'click', function () { selectNote(el.getAttribute('data-id')); });
+    on(el, 'keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectNote(el.getAttribute('data-id')); }
+    });
+  });
+}
+
+function selectNote(id) {
+  flushPendingSave(false);
+  selectedNoteId = id;
+  mobileShowEditor = true;
+  $('.notes-panel').classList.add('mobile-show-editor');
+  renderNotesList();
+  renderEditor();
+}
+
+function findNote(id) {
+  for (var i = 0; i < notes.length; i++) if (notes[i].id === id) return notes[i];
+  return null;
+}
+
+function createNewNote() {
+  flushPendingSave(false);
+  var existing = selectedNoteId ? findNote(selectedNoteId) : null;
+  var isBlank = existing && !existing.deleted && !existing.title && (!existing.body || stripHtml(existing.body).trim() === '') && (!existing.tags || existing.tags.length === 0);
+  if (isBlank) { renderEditor(); focusEditorTitle(); return; }
+
+  var now = Date.now();
+  var note = { id: uuid(), title: '', body: '', tags: [], pinned: false, deleted: false, deletedAt: null, createdAt: now, modifiedAt: now };
+  notes.unshift(note);
+  selectedNoteId = note.id;
+  mobileShowEditor = true;
+  $('.notes-panel').classList.add('mobile-show-editor');
+  renderNotesList();
+  renderEditor();
+  focusEditorTitle();
+}
+function focusEditorTitle() {
+  setTimeout(function () { var t = $('#editor-title'); if (t) t.focus(); }, 30);
+}
+
+function duplicateNote(id) {
+  var n = findNote(id);
+  if (!n) return;
+  var now = Date.now();
+  var copy = {
+    id: uuid(), title: (n.title ? n.title + ' (Copy)' : ''), body: n.body, tags: (n.tags || []).map(function (t) { return { id: uuid(), label: t.label, colorId: t.colorId }; }),
+    pinned: false, deleted: false, deletedAt: null, createdAt: now, modifiedAt: now
+  };
+  notes.unshift(copy);
+  persistNoteImmediate(copy);
+  selectedNoteId = copy.id;
+  renderNotesList();
+  renderEditor();
+  showToast('Note duplicated', 'success');
+}
+
+function togglePin(id) {
+  var n = findNote(id);
+  if (!n) return;
+  n.pinned = !n.pinned;
+  persistNoteImmediate(n);
+  renderNotesList();
+  renderEditor();
+}
+
+function deleteNote(id) {
+  var n = findNote(id);
+  if (!n) return;
+  n.deleted = true;
+  n.deletedAt = Date.now();
+  persistNoteImmediate(n);
+  if (selectedNoteId === id) {
+    selectedNoteId = null;
+    mobileShowEditor = false;
+    $('.notes-panel').classList.remove('mobile-show-editor');
+  }
+  renderNotesList();
+  renderEditor();
+  updateTrashBadge();
+  showToast('Note moved to Trash', 'success');
+}
+
+/* ============================================================
+   EDITOR
+   ============================================================ */
+function renderEditor() {
+  var pane = $('#editor-pane');
+  var note = selectedNoteId ? findNote(selectedNoteId) : null;
+
+  if (!note || note.deleted) {
+    pane.innerHTML =
+      '<div class="editor-empty-state"><i data-lucide="file-text"></i>' +
+        '<p>Select a note from the list, or create a new one to get started.</p></div>';
+    icons();
+    return;
+  }
+
+  pane.innerHTML =
+    '<div class="editor">' +
+      '<div class="editor-toolbar">' +
+        '<button class="btn-icon editor-back-btn" id="editor-back-btn" aria-label="Back to list"><i data-lucide="arrow-left"></i></button>' +
+        '<button class="toolbar-btn" data-cmd="bold" aria-label="Bold"><i data-lucide="bold"></i></button>' +
+        '<button class="toolbar-btn" data-cmd="italic" aria-label="Italic"><i data-lucide="italic"></i></button>' +
+        '<button class="toolbar-btn" data-cmd="insertUnorderedList" aria-label="Bullet list"><i data-lucide="list"></i></button>' +
+        '<button class="toolbar-btn" data-cmd="insertOrderedList" aria-label="Numbered list"><i data-lucide="list-ordered"></i></button>' +
+        '<div class="toolbar-spacer"></div>' +
+        '<button class="toolbar-btn' + (note.pinned ? ' active-state' : '') + '" id="editor-pin-btn" aria-label="Pin note"><i data-lucide="pin"></i></button>' +
+        '<button class="toolbar-btn" id="editor-dup-btn" aria-label="Duplicate note"><i data-lucide="copy"></i></button>' +
+        '<div class="toolbar-sep"></div>' +
+        '<button class="toolbar-btn" id="editor-delete-btn" aria-label="Move to Trash" style="color:var(--danger);"><i data-lucide="trash-2"></i></button>' +
+      '</div>' +
+      '<div class="editor-scroll">' +
+        '<input type="text" class="editor-title" id="editor-title" placeholder="Untitled note" value="' + escapeHtml(note.title || '') + '">' +
+        '<div class="editor-tags-row" id="editor-tags-row"></div>' +
+        '<div class="editor-body" id="editor-body" contenteditable="true" data-placeholder="Start writing…">' + (note.body || '') + '</div>' +
+      '</div>' +
+      '<div class="editor-meta" id="editor-meta">Created ' + formatDateTime(note.createdAt) + ' · Edited ' + formatDateTime(note.modifiedAt) + '</div>' +
+    '</div>';
+
+  renderEditorTags(note);
+  icons();
+
+  on($('#editor-back-btn'), 'click', function () {
+    mobileShowEditor = false;
+    $('.notes-panel').classList.remove('mobile-show-editor');
+  });
+  on($('#editor-title'), 'input', function (e) { note.title = e.target.value; scheduleSave(note); });
+  var bodyEl = $('#editor-body');
+  on(bodyEl, 'input', function () { note.body = bodyEl.innerHTML; scheduleSave(note); });
+  $all('.toolbar-btn[data-cmd]').forEach(function (btn) {
+    on(btn, 'mousedown', function (e) {
+      e.preventDefault();
+      document.execCommand(btn.getAttribute('data-cmd'), false, null);
+      note.body = bodyEl.innerHTML;
+      scheduleSave(note);
+      bodyEl.focus();
+    });
+  });
+  on($('#editor-pin-btn'), 'click', function () { togglePin(note.id); });
+  on($('#editor-dup-btn'), 'click', function () { duplicateNote(note.id); });
+  on($('#editor-delete-btn'), 'click', function () {
+    showConfirm({
+      title: 'Move to Trash?',
+      message: '"' + (note.title && note.title.trim() ? note.title : 'Untitled note') + '" will be moved to Trash. You can restore it anytime within 30 days.',
+      confirmLabel: 'Move to Trash', danger: true,
+      onConfirm: function () { deleteNote(note.id); }
+    });
+  });
+}
+
+function scheduleSave(note) {
+  pendingNote = note;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () { flushPendingSave(false); }, 500);
+}
+function flushPendingSave(sync) {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+  if (pendingNote) {
+    var note = pendingNote;
+    pendingNote = null;
+    persistNoteImmediate(note);
+    var metaEl = $('#editor-meta');
+    if (metaEl && note.id === selectedNoteId) {
+      metaEl.textContent = 'Created ' + formatDateTime(note.createdAt) + ' · Edited ' + formatDateTime(note.modifiedAt);
+    }
+    renderNotesList();
+  }
+}
+function persistNoteImmediate(note) {
+  note.modifiedAt = Date.now();
+  if (!vaultKey) return;
+  encryptObj(vaultKey, note).then(function (enc) {
+    return idbPut('notes', { id: note.id, iv: enc.iv, cipher: enc.cipher });
+  }).catch(function () { showToast('Could not save note', 'danger'); });
+}
+
+/* Tags */
+function renderEditorTags(note) {
+  var row = $('#editor-tags-row');
+  if (!row) return;
+  var chips = (note.tags || []).map(function (t) {
+    return '<span class="tag-chip tag-' + t.colorId + '">' + escapeHtml(t.label) +
+      '<button data-remove-tag="' + t.id + '" aria-label="Remove tag"><i data-lucide="x"></i></button></span>';
+  }).join('');
+  var popoverOpen = openTagPopoverNoteId === note.id;
+  row.innerHTML = chips +
+    '<button class="btn-add-tag" id="add-tag-btn"><i data-lucide="tag"></i>Add tag</button>' +
+    (popoverOpen ? renderTagPopoverHtml() : '');
+  icons();
+
+  $all('[data-remove-tag]', row).forEach(function (btn) {
+    on(btn, 'click', function () {
+      note.tags = note.tags.filter(function (t) { return t.id !== btn.getAttribute('data-remove-tag'); });
+      persistNoteImmediate(note);
+      renderEditorTags(note);
+      renderNotesList();
+    });
+  });
+  on($('#add-tag-btn'), 'click', function () {
+    openTagPopoverNoteId = popoverOpen ? null : note.id;
+    tagPopoverColor = TAG_COLORS[0].id;
+    renderEditorTags(note);
+  });
+  if (popoverOpen) {
+    $all('.tag-swatch', row).forEach(function (sw) {
+      on(sw, 'click', function () {
+        tagPopoverColor = sw.getAttribute('data-color');
+        $all('.tag-swatch', row).forEach(function (s) { s.classList.toggle('selected', s === sw); });
+      });
+    });
+    var input = $('#tag-label-input');
+    function commitTag() {
+      var label = input.value.trim();
+      if (!label) return;
+      note.tags = note.tags || [];
+      note.tags.push({ id: uuid(), label: label, colorId: tagPopoverColor });
+      persistNoteImmediate(note);
+      openTagPopoverNoteId = null;
+      renderEditorTags(note);
+      renderNotesList();
+    }
+    on($('#tag-add-confirm'), 'click', commitTag);
+    on(input, 'keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); commitTag(); } if (e.key === 'Escape') { openTagPopoverNoteId = null; renderEditorTags(note); } });
+    setTimeout(function () { input && input.focus(); }, 10);
+  }
+}
+function renderTagPopoverHtml() {
+  return '<div class="tag-popover">' +
+    '<div class="tag-swatches">' + TAG_COLORS.map(function (c, i) {
+      return '<button type="button" class="tag-swatch tag-' + c.id + (i === 0 ? ' selected' : '') + '" data-color="' + c.id + '" aria-label="' + c.label + '"></button>';
+    }).join('') + '</div>' +
+    '<div class="tag-popover-row">' +
+      '<input type="text" id="tag-label-input" placeholder="Tag name" maxlength="24">' +
+      '<button class="btn btn-primary" id="tag-add-confirm" style="padding:8px 12px;">Add</button>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+on(document, 'input', function (e) {
+  if (e.target && e.target.id === 'search-input') {
+    searchQuery = e.target.value;
+    renderNotesList();
+  }
+});
+
+/* ============================================================
+   TRASH
+   ============================================================ */
+function purgeExpiredTrash() {
+  var cutoff = Date.now() - TRASH_RETENTION_DAYS * 86400000;
+  var toRemove = notes.filter(function (n) { return n.deleted && n.deletedAt && n.deletedAt < cutoff; });
+  if (!toRemove.length) return;
+  notes = notes.filter(function (n) { return !(n.deleted && n.deletedAt && n.deletedAt < cutoff); });
+  toRemove.forEach(function (n) { idbDelete('notes', n.id); });
+}
+function renderTrashList() {
+  var container = $('#trash-list');
+  var trashed = notes.filter(function (n) { return n.deleted; }).sort(function (a, b) { return (b.deletedAt || 0) - (a.deletedAt || 0); });
+  if (trashed.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i data-lucide="trash-2"></i><p>Trash is empty.</p></div>';
+    icons();
+    return;
+  }
+  container.innerHTML = trashed.map(function (n) {
+    var title = n.title && n.title.trim() ? escapeHtml(n.title) : 'Untitled note';
+    var dLeft = daysLeft(n.deletedAt);
+    return (
+      '<div class="trash-item" data-id="' + n.id + '">' +
+        '<div class="trash-item-main">' +
+          '<div class="trash-item-title">' + title + '</div>' +
+          '<div class="trash-item-meta">Deleted ' + formatDate(n.deletedAt) + ' · purges in ' + dLeft + ' day' + (dLeft === 1 ? '' : 's') + '</div>' +
+        '</div>' +
+        '<div class="trash-item-actions">' +
+          '<button class="btn btn-ghost" data-restore="' + n.id + '"><i data-lucide="rotate-ccw"></i>Restore</button>' +
+          '<button class="btn btn-danger-ghost" data-purge="' + n.id + '"><i data-lucide="x"></i>Delete Forever</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+  icons();
+  $all('[data-restore]', container).forEach(function (btn) { on(btn, 'click', function () { restoreNote(btn.getAttribute('data-restore')); }); });
+  $all('[data-purge]', container).forEach(function (btn) { on(btn, 'click', function () { confirmPurgeNote(btn.getAttribute('data-purge')); }); });
+}
+function restoreNote(id) {
+  var n = findNote(id);
+  if (!n) return;
+  n.deleted = false;
+  n.deletedAt = null;
+  persistNoteImmediate(n);
+  renderTrashList();
+  renderNotesList();
+  updateTrashBadge();
+  showToast('Note restored', 'success');
+}
+function confirmPurgeNote(id) {
+  var n = findNote(id);
+  if (!n) return;
+  showConfirm({
+    title: 'Delete forever?',
+    message: '"' + (n.title || 'Untitled note') + '" will be permanently deleted. This cannot be undone.',
+    confirmLabel: 'Delete Forever', danger: true,
+    onConfirm: function () {
+      notes = notes.filter(function (x) { return x.id !== id; });
+      idbDelete('notes', id);
+      renderTrashList();
+      updateTrashBadge();
+      showToast('Note permanently deleted', 'success');
+    }
+  });
+}
+on($('#empty-trash-btn'), 'click', function () {
+  var trashed = notes.filter(function (n) { return n.deleted; });
+  if (!trashed.length) { showToast('Trash is already empty', 'info'); return; }
+  showConfirm({
+    title: 'Empty Trash?',
+    message: trashed.length + ' note' + (trashed.length === 1 ? '' : 's') + ' will be permanently deleted. This cannot be undone.',
+    confirmLabel: 'Empty Trash', danger: true,
+    onConfirm: function () {
+      trashed.forEach(function (n) { idbDelete('notes', n.id); });
+      notes = notes.filter(function (n) { return !n.deleted; });
+      renderTrashList();
+      updateTrashBadge();
+      showToast('Trash emptied', 'success');
+    }
+  });
+});
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function renderSettings() {
+  var el = $('#settings-content');
+  el.innerHTML =
+    '<section class="settings-section">' +
+      '<h2>Security</h2>' +
+      '<form id="change-password-form">' +
+        '<div class="field password-field">' +
+          '<label for="cp-current">Current password</label>' +
+          '<div class="password-field-inner"><input type="password" id="cp-current" autocomplete="current-password" required></div>' +
+        '</div>' +
+        '<div class="field password-field">' +
+          '<label for="cp-new">New password</label>' +
+          '<div class="password-field-inner"><input type="password" id="cp-new" autocomplete="new-password" required minlength="8"></div>' +
+          '<span class="field-hint">At least 8 characters.</span>' +
+        '</div>' +
+        '<div class="field password-field">' +
+          '<label for="cp-confirm">Confirm new password</label>' +
+          '<div class="password-field-inner"><input type="password" id="cp-confirm" autocomplete="new-password" required minlength="8"></div>' +
+        '</div>' +
+        '<p class="field-error" id="cp-error"></p>' +
+        '<button type="submit" class="btn btn-primary" id="cp-submit">Change Password</button>' +
+      '</form>' +
+    '</section>' +
+
+    '<section class="settings-section">' +
+      '<h2>Vault Behavior</h2>' +
+      '<div class="setting-row">' +
+        '<div><div class="setting-row-label">Auto-lock after inactivity</div><div class="setting-row-desc">Locks the vault and clears the session key from memory.</div></div>' +
+        '<select class="select" id="autolock-select">' +
+          '<option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="never">Never</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="setting-row">' +
+        '<div><div class="setting-row-label">Lock when tab loses focus</div><div class="setting-row-desc">Lock immediately when you switch away from this tab.</div></div>' +
+        '<label class="toggle-switch"><input type="checkbox" id="lock-on-blur-toggle"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>' +
+      '</div>' +
+    '</section>' +
+
+    '<section class="settings-section">' +
+      '<h2>Backup</h2>' +
+      '<p class="setting-row-desc" style="margin-bottom:var(--space-4);">Export a full copy of your vault. It stays encrypted — only your master password can open it.</p>' +
+      '<div class="setting-row-actions">' +
+        '<button class="btn btn-ghost" id="export-backup-btn"><i data-lucide="download"></i>Export Encrypted Backup</button>' +
+        '<button class="btn btn-ghost" id="import-backup-btn"><i data-lucide="upload"></i>Import Backup</button>' +
+      '</div>' +
+    '</section>' +
+
+    '<section class="settings-section">' +
+      '<h2>Appearance</h2>' +
+      '<div class="setting-row" style="border-top:none;padding-top:0;">' +
+        '<div class="setting-row-label">Theme</div>' +
+        '<div class="segmented" id="theme-switcher-settings">' +
+          '<button class="segmented-btn" data-theme-choice="auto">Auto</button>' +
+          '<button class="segmented-btn" data-theme-choice="light">Light</button>' +
+          '<button class="segmented-btn" data-theme-choice="dark">Dark</button>' +
+          '<button class="segmented-btn" data-theme-choice="amoled">AMOLED</button>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
+
+    '<section class="settings-section">' +
+      '<h2>About</h2>' +
+      '<p class="about-tagline">NotesVault — professional encrypted note-taking, zero-knowledge by design.</p>' +
+      '<span class="version-badge">v' + APP_VERSION + '</span>' +
+      '<div class="changelog"><h3>Changelog</h3><ul id="changelog-list">' +
+        CHANGELOG.slice(0, 3).map(function (c) {
+          return '<li class="changelog-item"><span class="changelog-version">v' + c.version + '</span><span class="changelog-date">' + c.date + '</span><span class="changelog-note">' + escapeHtml(c.note) + '</span></li>';
+        }).join('') +
+      '</ul></div>' +
+      '<p class="built-by">Built by <a href="https://github.com/OneFileDev" target="_blank" rel="noopener noreferrer">OneFileDev</a></p>' +
+    '</section>';
+
+  $('#autolock-select').value = prefs.autoLockMinutes;
+  $('#lock-on-blur-toggle').checked = prefs.lockOnBlur;
+  renderThemeSwitcherState();
+  icons();
+
+  on($('#change-password-form'), 'submit', handleChangePassword);
+  on($('#autolock-select'), 'change', function (e) { prefs.autoLockMinutes = e.target.value; savePrefs(); resetIdleTimer(); showToast('Auto-lock updated', 'success'); });
+  on($('#lock-on-blur-toggle'), 'change', function (e) { prefs.lockOnBlur = e.target.checked; savePrefs(); });
+  on($('#export-backup-btn'), 'click', exportBackup);
+  on($('#import-backup-btn'), 'click', function () { $('#import-file-input').click(); });
+  $all('.segmented-btn[data-theme-choice]', el).forEach(function (b) {
+    on(b, 'click', function () { setTheme(b.getAttribute('data-theme-choice')); });
+  });
+}
+
+async function handleChangePassword(e) {
+  e.preventDefault();
+  var current = $('#cp-current').value, next = $('#cp-new').value, confirm = $('#cp-confirm').value;
+  var errEl = $('#cp-error');
+  errEl.textContent = '';
+  if (next.length < 8) { errEl.textContent = 'New password must be at least 8 characters.'; return; }
+  if (next !== confirm) { errEl.textContent = "New passwords don't match."; return; }
+
+  var submitBtn = $('#cp-submit');
+  submitBtn.disabled = true; submitBtn.textContent = 'Verifying…';
+  try {
+    var config = await idbGet('vault', 'config');
+    var salt = b64ToBuf(config.salt);
+    var checkKey = await deriveKey(current, salt, config.iterations);
+    var check = await decryptObj(checkKey, config.verifierIv, config.verifierCipher);
+    if (!check || check.check !== VERIFIER_MARKER.check) throw new Error('bad-current');
+  } catch (err) {
+    errEl.textContent = 'Current password is incorrect.';
+    submitBtn.disabled = false; submitBtn.textContent = 'Change Password';
+    return;
+  }
+
+  submitBtn.textContent = 'Re-encrypting vault…';
+  var newSalt = crypto.getRandomValues(new Uint8Array(16));
+  var newKey = await deriveKey(next, newSalt, PBKDF2_ITERATIONS);
+  var newVerifier = await encryptObj(newKey, VERIFIER_MARKER);
+
+  for (var i = 0; i < notes.length; i++) {
+    var enc = await encryptObj(newKey, notes[i]);
+    await idbPut('notes', { id: notes[i].id, iv: enc.iv, cipher: enc.cipher });
+  }
+  await idbPut('vault', {
+    id: 'config', salt: bufToB64(newSalt), iterations: PBKDF2_ITERATIONS,
+    verifierIv: newVerifier.iv, verifierCipher: newVerifier.cipher, createdAt: config.createdAt || Date.now()
+  });
+  vaultKey = newKey;
+  submitBtn.disabled = false; submitBtn.textContent = 'Change Password';
+  e.target.reset();
+  showToast('Master password changed', 'success');
+}
+
+/* Export / Import */
+async function exportBackup() {
+  var config = await idbGet('vault', 'config');
+  var rawNotes = await idbGetAll('notes');
+  var payload = { app: 'NotesVault', version: APP_VERSION, exportedAt: new Date().toISOString(), vault: config, notes: rawNotes };
+  var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var stamp = new Date().toISOString().slice(0, 10);
+  a.href = url; a.download = 'notesvault-backup-' + stamp + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Backup exported', 'success');
+}
+on($('#import-file-input'), 'change', function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    var parsed;
+    try { parsed = JSON.parse(reader.result); } catch (err) { showToast('That file is not a valid NotesVault backup', 'danger'); return; }
+    if (!parsed || !parsed.vault || !parsed.vault.salt || !Array.isArray(parsed.notes)) {
+      showToast('That file is not a valid NotesVault backup', 'danger'); return;
+    }
+    showConfirm({
+      title: 'Replace current vault?',
+      message: 'Importing this backup will replace everything currently in your vault. This cannot be undone.',
+      confirmLabel: 'Import & Replace', danger: true,
+      onConfirm: function () { performImport(parsed); }
+    });
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+async function performImport(parsed) {
+  await idbClear('vault');
+  await idbClear('notes');
+  await idbPut('vault', parsed.vault);
+  for (var i = 0; i < parsed.notes.length; i++) await idbPut('notes', parsed.notes[i]);
+  showToast('Vault imported', 'success');
+  lockVault();
+  renderLockScreen('imported');
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+function toggleSidebarFold() {
+  prefs.sidebarCollapsed = !prefs.sidebarCollapsed;
+  savePrefs();
+  $('#sidebar').classList.toggle('collapsed', prefs.sidebarCollapsed);
+}
+function openMobileSidebar() {
+  $('#sidebar').classList.add('mobile-open');
+  $('#sidebar-backdrop').classList.add('show');
+}
+function closeMobileSidebar() {
+  $('#sidebar').classList.remove('mobile-open');
+  $('#sidebar-backdrop').classList.remove('show');
+}
+
+/* ============================================================
+   GLOBAL EVENT BINDING
+   ============================================================ */
+function bindGlobalEvents() {
+  $all('.nav-item').forEach(function (btn) { on(btn, 'click', function () { switchTab(btn.getAttribute('data-tab')); }); });
+  on($('#new-note-btn'), 'click', createNewNote);
+  on($('#fold-btn'), 'click', toggleSidebarFold);
+  on($('#menu-btn'), 'click', openMobileSidebar);
+  on($('#sidebar-backdrop'), 'click', closeMobileSidebar);
+  on($('#settings-btn'), 'click', function () { switchTab('settings'); });
+  on($('#theme-toggle-btn'), 'click', cycleTheme);
+  on($('#lock-btn'), 'click', lockVault);
+
+  on(document, 'keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (openTagPopoverNoteId) { var n = findNote(openTagPopoverNoteId); openTagPopoverNoteId = null; if (n) renderEditorTags(n); }
+      $('#modal-root').innerHTML = '';
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (currentTab === 'notes') { e.preventDefault(); var s = $('#search-input'); if (s) s.focus(); }
+    }
+  });
+
+  window.addEventListener('beforeunload', function () { flushPendingSave(true); });
+}
+
+init();
+})();
+</script>
+</body>
+</html>
