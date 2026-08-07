@@ -86,6 +86,20 @@ a { color: inherit; }
   --sheen: linear-gradient(135deg, rgba(255,244,214,0.35), rgba(255,244,214,0) 55%);
   --scrollbar: rgba(212,212,216,0.14);
 }
+/* AMOLED accent variants — the base rule above is Gold (default). These override
+   only the accent-related tokens for the other two selectable options. */
+[data-theme="amoled"][data-amoled-accent="platinum"] {
+  --accent: #D4D4D8; --accent-hover: #EDEDEF; --accent-text: #0D0D0F; --focus-ring: #D4D4D8;
+  --sheen: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%);
+}
+[data-theme="amoled"][data-amoled-accent="black"] {
+  /* True black, not --surface's #0D0D0F — needs to read as distinct from the
+     cards/sidebar it sits on, so it relies on border + sheen for definition
+     rather than fill contrast alone. */
+  --accent: #000000; --accent-hover: #141414; --accent-text: #D4D4D8; --focus-ring: #D4D4D8;
+  --border-strong: rgba(212,212,216,0.32);
+  --sheen: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 60%);
+}
 
 /* Tag colors — muted, desaturated, distinct from accent/danger */
 .tag-amber   { --tag-c: #96773F; }
@@ -243,11 +257,18 @@ input::placeholder { color: var(--text-tertiary); }
   min-height: 18px; font-size: 13px; color: var(--danger); font-weight: 500; margin-top: var(--space-3);
 }
 .lock-footer-hint { margin-top: var(--space-6); font-size: 12px; color: var(--text-tertiary); }
+.lock-secondary-link {
+  display: block; width: 100%; text-align: center; background: none; border: none; color: var(--text-tertiary);
+  font-size: 12.5px; font-weight: 600; cursor: pointer; margin-top: var(--space-4);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.lock-secondary-link:hover { color: var(--text-secondary); }
+.recovery-input-field { font-family: 'Courier New', monospace; letter-spacing: 0.03em; text-transform: uppercase; }
 
 /* ============================================================
    APP SHELL
    ============================================================ */
-.app-shell { display: flex; height: 100vh; opacity: 1; }
+.app-shell { display: flex; height: 100vh; height: 100dvh; opacity: 1; }
 .app-shell[hidden] { display: none; }
 .app-shell.revealing { animation: fadeIn var(--dur-base) var(--ease); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -438,9 +459,21 @@ input::placeholder { color: var(--text-tertiary); }
 .settings-section h2 { font-family: var(--font-display); font-size: 17px; font-weight: 550; margin-bottom: var(--space-4); }
 .setting-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--border); }
 .setting-row:first-of-type { border-top: none; padding-top: 0; }
+.setting-row-text { flex: 1; min-width: 0; }
 .setting-row-label { font-size: 14px; font-weight: 500; }
 .setting-row-desc { font-size: 12.5px; color: var(--text-tertiary); margin-top: 2px; }
 .setting-row-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.settings-section-danger { border-color: rgba(92,42,42,0.35); }
+.settings-section-danger h2 { color: var(--danger); }
+.security-block-divided { border-top: 1px solid var(--border); margin-top: var(--space-4); padding-top: var(--space-4); }
+.form-actions-row { display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-2); }
+.recovery-key-box {
+  font-family: 'Courier New', monospace; font-size: 15px; font-weight: 700; letter-spacing: 0.03em;
+  text-align: center; padding: var(--space-4); background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md); margin-bottom: var(--space-4); user-select: all; word-break: break-all; color: var(--text-primary);
+}
+.rk-confirm-row { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; color: var(--text-secondary); margin-bottom: var(--space-4); cursor: pointer; }
+.rk-confirm-row input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
 .about-tagline { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-3); }
 .version-badge {
   display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em;
@@ -503,6 +536,7 @@ input::placeholder { color: var(--text-tertiary); }
   .sidebar.collapsed .wordmark-group { display: flex; }
   .sidebar.collapsed .nav-label { display: inline; }
   .sidebar.collapsed .sidebar-footer { flex-direction: row; }
+  .fold-btn { display: none; }
   .sidebar-backdrop.show {
     display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 55; animation: fadeIn var(--dur-fast) var(--ease);
   }
@@ -513,7 +547,15 @@ input::placeholder { color: var(--text-tertiary); }
   .notes-panel.mobile-show-editor .editor-pane { transform: translateX(0); }
   .editor-back-btn { display: flex !important; }
   .content-header { padding: var(--space-3) var(--space-4); }
-  .settings-content { padding: var(--space-4); }
+  .settings-content { padding: var(--space-4) var(--space-4) var(--space-8); }
+  .trash-body { padding-bottom: var(--space-7); }
+  .editor-scroll { padding-bottom: var(--space-7); }
+  .notes-list { padding-bottom: var(--space-4); }
+  .trash-item { flex-direction: column; align-items: stretch; gap: var(--space-3); }
+  .trash-item-actions { justify-content: flex-start; }
+  .changelog-item { flex-direction: column; gap: 2px; }
+  .changelog-version, .changelog-date { width: auto; }
+  .setting-row { flex-wrap: wrap; }
 }
 .editor-back-btn { display: none; }
 
@@ -622,12 +664,12 @@ input::placeholder { color: var(--text-tertiary); }
    CONSTANTS
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
-var VERIFIER_MARKER = { check: 'notesvault-v1' };
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.0.1';
+var APP_VERSION = '1.3.0';
 var CHANGELOG = [
-  { version: '1.0.1', date: 'Aug 2026', note: 'Fixed the Notes split layout, warmed the AMOLED accent to gold, added a delete confirmation, and streamlined the sidebar.' },
-  { version: '1.0.0', date: 'Aug 2026', note: 'Initial release — zero-knowledge encrypted notes, trash, and vault settings.' }
+  { version: '1.3.0', date: 'Aug 2026', note: 'Added a selectable AMOLED accent — Gold, Platinum, or Black — in Settings.' },
+  { version: '1.2.0', date: 'Aug 2026', note: 'Fixed a vault-creation bug, added Erase All Data, and fixed cramped text layouts on mobile.' },
+  { version: '1.1.0', date: 'Aug 2026', note: 'Fixed cross-version data loss and mobile navigation bugs; added an optional recovery key and a cleaner Security section.' }
 ];
 var TAG_COLORS = [
   { id: 'amber', label: 'Amber' },
@@ -677,6 +719,15 @@ function daysLeft(deletedAt) {
 
 /* ============================================================
    CRYPTO — zero-knowledge helpers (Web Crypto API only)
+
+   Envelope encryption: a random Data Encryption Key (DEK) is
+   generated once and used to encrypt all notes. The DEK itself is
+   "wrapped" (encrypted) by a Key-Encryption-Key derived from the
+   master password via PBKDF2. Optionally, it can ALSO be wrapped by
+   a second KEK derived from a one-time recovery key. Either secret
+   unwraps the same DEK — so password and recovery key are two
+   independent doors to the same data, and changing the password
+   only needs to re-wrap the small DEK, not re-encrypt every note.
    ============================================================ */
 function bufToB64(bytes) {
   var binary = '', chunk = 0x8000;
@@ -690,16 +741,28 @@ function b64ToBuf(b64) {
   for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
-async function deriveKey(password, saltBytes, iterations) {
+async function deriveKEK(secret, saltBytes, iterations) {
   var enc = new TextEncoder();
-  var baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  var baseKey = await crypto.subtle.importKey('raw', enc.encode(secret), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: saltBytes, iterations: iterations, hash: 'SHA-256' },
-    baseKey,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
+    baseKey, { name: 'AES-GCM', length: 256 }, false, ['wrapKey', 'unwrapKey']
   );
+}
+async function generateDEK() {
+  // extractable:true so it can be (re-)wrapped later (password change, enabling recovery) —
+  // the raw key never itself touches storage, only its wrapped form does.
+  return crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+}
+async function wrapDEK(dek, kek) {
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  var wrapped = await crypto.subtle.wrapKey('raw', dek, kek, { name: 'AES-GCM', iv: iv });
+  return { iv: bufToB64(iv), wrapped: bufToB64(new Uint8Array(wrapped)) };
+}
+async function unwrapDEK(wrappedB64, ivB64, kek) {
+  var wrappedBuf = b64ToBuf(wrappedB64), iv = b64ToBuf(ivB64);
+  // Throws if the KEK is wrong (GCM auth tag mismatch) — this IS the password/recovery-key check.
+  return crypto.subtle.unwrapKey('raw', wrappedBuf, kek, { name: 'AES-GCM', iv: iv }, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
 }
 async function encryptObj(key, obj) {
   var iv = crypto.getRandomValues(new Uint8Array(12));
@@ -713,13 +776,40 @@ async function decryptObj(key, ivB64, cipherB64) {
   return JSON.parse(new TextDecoder().decode(plainBuf));
 }
 
+/* Recovery key: 25 random unambiguous base32 characters, grouped for readability. */
+var RECOVERY_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function generateRecoveryKey() {
+  var groups = [];
+  for (var g = 0; g < 5; g++) {
+    var bytes = crypto.getRandomValues(new Uint8Array(5)), chars = '';
+    for (var i = 0; i < 5; i++) chars += RECOVERY_ALPHABET[bytes[i] % 32];
+    groups.push(chars);
+  }
+  return 'NV-' + groups.join('-');
+}
+function normalizeRecoveryInput(str) {
+  return (str || '').toUpperCase().replace(/[^A-Z2-7]/g, '');
+}
+
 /* ============================================================
-   INDEXEDDB — encrypted storage
+   STORAGE — abstracts over two backends:
+   1) Anthropic's artifact `window.storage`, when present. This is
+      the persistent key-value store designed to survive artifact
+      reloads inside Claude.ai — raw IndexedDB does NOT reliably
+      survive across artifact version updates there, which is why
+      notes were disappearing between versions.
+   2) Real IndexedDB, used when this file is opened standalone
+      (double-clicked, hosted, etc.) outside Claude.ai, where
+      window.storage does not exist. Same offline-capable,
+      no-server behavior either way.
    ============================================================ */
-var DB_NAME = 'notesvault-db', DB_VERSION = 1;
-function openDB() {
+var hasArtifactStorage = !!(window.storage && typeof window.storage.get === 'function');
+var db = null;                  // IndexedDB handle (standalone backend only)
+var rawNotesCache = null;       // { [id]: {id, iv, cipher} } (window.storage backend only)
+
+function openIDB() {
   return new Promise(function (resolve, reject) {
-    var req = indexedDB.open(DB_NAME, DB_VERSION);
+    var req = indexedDB.open('notesvault-db', 1);
     req.onupgradeneeded = function (e) {
       var d = e.target.result;
       if (!d.objectStoreNames.contains('vault')) d.createObjectStore('vault', { keyPath: 'id' });
@@ -757,7 +847,7 @@ function idbDelete(store, key) {
     tx.onerror = function () { reject(tx.error); };
   });
 }
-function idbClear(store) {
+function idbClearStore(store) {
   return new Promise(function (resolve, reject) {
     var tx = db.transaction(store, 'readwrite').objectStore(store).clear();
     tx.onsuccess = function () { resolve(); };
@@ -765,11 +855,86 @@ function idbClear(store) {
   });
 }
 
+async function storageInit() {
+  if (hasArtifactStorage) {
+    try {
+      // Feature detection alone isn't proof it actually works here — verify with a real round-trip.
+      await window.storage.set('__nv_probe__', '1', false);
+      try { await window.storage.delete('__nv_probe__', false); } catch (e2) { /* cleanup best-effort only */ }
+      return true;
+    } catch (e) {
+      hasArtifactStorage = false; // fall through to the IndexedDB backend below
+    }
+  }
+  try { db = await openIDB(); return true; } catch (e) { return false; }
+}
+async function getVaultConfig() {
+  if (hasArtifactStorage) {
+    try {
+      var r = await window.storage.get('vault-config', false);
+      return r ? JSON.parse(r.value) : null;
+    } catch (e) { return null; }
+  }
+  return idbGet('vault', 'config');
+}
+async function setVaultConfig(config) {
+  if (hasArtifactStorage) { await window.storage.set('vault-config', JSON.stringify(config), false); return; }
+  await idbPut('vault', config);
+}
+async function getAllNoteRecords() {
+  if (hasArtifactStorage) {
+    try {
+      var r = await window.storage.get('notes-collection', false);
+      rawNotesCache = r ? JSON.parse(r.value) : {};
+    } catch (e) { rawNotesCache = {}; }
+    return Object.keys(rawNotesCache).map(function (k) { return rawNotesCache[k]; });
+  }
+  return idbGetAll('notes');
+}
+async function saveNoteRecord(record) {
+  if (hasArtifactStorage) {
+    if (!rawNotesCache) rawNotesCache = {};
+    rawNotesCache[record.id] = record;
+    await window.storage.set('notes-collection', JSON.stringify(rawNotesCache), false);
+    return;
+  }
+  await idbPut('notes', record);
+}
+async function deleteNoteRecord(id) {
+  if (hasArtifactStorage) {
+    if (!rawNotesCache) rawNotesCache = {};
+    delete rawNotesCache[id];
+    await window.storage.set('notes-collection', JSON.stringify(rawNotesCache), false);
+    return;
+  }
+  await idbDelete('notes', id);
+}
+async function clearAllStorage() {
+  if (hasArtifactStorage) {
+    rawNotesCache = {};
+    try { await window.storage.delete('vault-config', false); } catch (e) { /* already absent */ }
+    try { await window.storage.delete('notes-collection', false); } catch (e) { /* already absent */ }
+    return;
+  }
+  await idbClearStore('vault');
+  await idbClearStore('notes');
+}
+async function replaceAllStorage(vaultConfig, noteRecords) {
+  await clearAllStorage();
+  await setVaultConfig(vaultConfig);
+  if (hasArtifactStorage) {
+    rawNotesCache = {};
+    noteRecords.forEach(function (r) { rawNotesCache[r.id] = r; });
+    await window.storage.set('notes-collection', JSON.stringify(rawNotesCache), false);
+  } else {
+    for (var i = 0; i < noteRecords.length; i++) await idbPut('notes', noteRecords[i]);
+  }
+}
+
 /* ============================================================
    STATE
    ============================================================ */
-var db = null;
-var vaultKey = null;
+var vaultKey = null;         // the unwrapped DEK for this session
 var notes = [];              // decrypted, in-memory only while unlocked
 var currentTab = 'notes';
 var selectedNoteId = null;
@@ -778,21 +943,26 @@ var searchQuery = '';
 var saveTimer = null;
 var pendingNote = null;
 var idleTimer = null;
-var lockMode = 'unlock';     // 'setup' | 'unlock' | 'imported'
+var lockMode = 'unlock';     // 'setup' | 'unlock' | 'recovery' | 'imported'
 var openTagPopoverNoteId = null;
 var tagPopoverColor = TAG_COLORS[0].id;
+var recoveryAvailable = false;   // does the current vault have a recovery key enabled?
+var recoveryModeActive = false;  // did we just unlock via recovery key (nudges a password reset)?
+var changePasswordOpen = false;  // is the change-password form expanded in Settings?
 
 var prefs = {
   theme: localStorage.getItem('nv_theme') || 'auto',
   sidebarCollapsed: localStorage.getItem('nv_sidebar_collapsed') === '1',
   autoLockMinutes: localStorage.getItem('nv_autolock') || '5',
-  lockOnBlur: localStorage.getItem('nv_lock_on_blur') === '1'
+  lockOnBlur: localStorage.getItem('nv_lock_on_blur') === '1',
+  amoledAccent: localStorage.getItem('nv_amoled_accent') || 'gold'
 };
 function savePrefs() {
   localStorage.setItem('nv_theme', prefs.theme);
   localStorage.setItem('nv_sidebar_collapsed', prefs.sidebarCollapsed ? '1' : '0');
   localStorage.setItem('nv_autolock', prefs.autoLockMinutes);
   localStorage.setItem('nv_lock_on_blur', prefs.lockOnBlur ? '1' : '0');
+  localStorage.setItem('nv_amoled_accent', prefs.amoledAccent);
 }
 
 /* ============================================================
@@ -800,6 +970,7 @@ function savePrefs() {
    ============================================================ */
 var THEME_ICONS = { auto: 'monitor', light: 'sun', dark: 'moon', amoled: 'contrast' };
 var THEME_LABELS = { auto: 'Auto theme', light: 'Light theme', dark: 'Dark theme', amoled: 'AMOLED theme' };
+var AMOLED_ACCENT_LABELS = { gold: 'Gold', platinum: 'Platinum', black: 'Black' };
 function resolvedTheme() {
   if (prefs.theme === 'auto') {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -808,6 +979,7 @@ function resolvedTheme() {
 }
 function applyTheme() {
   document.documentElement.setAttribute('data-theme', resolvedTheme());
+  document.documentElement.setAttribute('data-amoled-accent', prefs.amoledAccent);
   var btn = $('#theme-toggle-btn');
   if (btn) {
     var existingIcon = btn.querySelector('svg, i[data-lucide]');
@@ -828,15 +1000,25 @@ function cycleTheme() {
   prefs.theme = order[(idx + 1) % order.length];
   savePrefs();
   applyTheme();
+  if (currentTab === 'settings') renderSettings();
 }
 function setTheme(t) {
   prefs.theme = t;
+  savePrefs();
+  applyTheme();
+  if (currentTab === 'settings') renderSettings();
+}
+function setAmoledAccent(choice) {
+  prefs.amoledAccent = choice;
   savePrefs();
   applyTheme();
 }
 function renderThemeSwitcherState() {
   $all('.segmented-btn[data-theme-choice]').forEach(function (b) {
     b.classList.toggle('active', b.getAttribute('data-theme-choice') === prefs.theme);
+  });
+  $all('.segmented-btn[data-amoled-choice]').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-amoled-choice') === prefs.amoledAccent);
   });
 }
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
@@ -885,14 +1067,14 @@ async function init() {
   applyTheme();
   if (prefs.sidebarCollapsed) $('#sidebar').classList.add('collapsed');
   icons();
-  try {
-    db = await openDB();
-  } catch (err) {
+  var ok = await storageInit();
+  if (!ok) {
     $('#lock-tagline').textContent = 'This browser could not open local storage. Try a different browser or disable private browsing.';
     return;
   }
-  var config = await idbGet('vault', 'config');
+  var config = await getVaultConfig();
   lockMode = config ? 'unlock' : 'setup';
+  recoveryAvailable = !!(config && config.recoveryEnabled);
   renderLockScreen(lockMode);
   bindGlobalEvents();
 }
@@ -924,8 +1106,17 @@ function renderLockScreen(mode) {
           '<button type="button" class="btn-toggle-visibility" data-target="pw-confirm" aria-label="Show password"><i data-lucide="eye"></i></button>' +
         '</div>' +
       '</div>' +
-      '<p class="lock-warning"><i data-lucide="shield-alert"></i><span>This vault is zero-knowledge: there is no password recovery. If you lose this password, your notes are lost for good.</span></p>' +
+      '<p class="lock-warning"><i data-lucide="shield-alert"></i><span>This vault is zero-knowledge: there is no password recovery. If you lose this password, your notes are lost for good. You can optionally set up a recovery key later, in Settings.</span></p>' +
       '<button type="submit" class="btn btn-primary btn-block">Create Vault</button>';
+  } else if (mode === 'recovery') {
+    tagline.textContent = "Enter your recovery key to unlock your vault. You'll be asked to set a new master password afterward.";
+    form.innerHTML =
+      '<div class="field">' +
+        '<label for="recovery-input">Recovery key</label>' +
+        '<input type="text" id="recovery-input" class="recovery-input-field" placeholder="NV-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" required autofocus>' +
+      '</div>' +
+      '<button type="submit" class="btn btn-primary btn-block">Unlock with Recovery Key</button>' +
+      '<button type="button" class="lock-secondary-link" id="back-to-password-link">Back to password</button>';
   } else {
     tagline.textContent = mode === 'imported'
       ? 'Vault imported. Enter the master password for this backup to unlock it.'
@@ -938,9 +1129,12 @@ function renderLockScreen(mode) {
           '<button type="button" class="btn-toggle-visibility" data-target="pw-unlock" aria-label="Show password"><i data-lucide="eye"></i></button>' +
         '</div>' +
       '</div>' +
-      '<button type="submit" class="btn btn-primary btn-block">Unlock</button>';
+      '<button type="submit" class="btn btn-primary btn-block">Unlock</button>' +
+      (recoveryAvailable ? '<button type="button" class="lock-secondary-link" id="use-recovery-link">Forgot password? Use your recovery key</button>' : '');
   }
   icons();
+  on($('#use-recovery-link'), 'click', function () { renderLockScreen('recovery'); });
+  on($('#back-to-password-link'), 'click', function () { renderLockScreen('unlock'); });
   $all('.btn-toggle-visibility', form).forEach(function (btn) {
     on(btn, 'click', function () {
       var target = $('#' + btn.getAttribute('data-target'));
@@ -958,6 +1152,7 @@ on(document, 'submit', function (e) {
   if (e.target.id === 'unlock-form') {
     e.preventDefault();
     if (lockMode === 'setup') handleSetupSubmit();
+    else if (lockMode === 'recovery') handleRecoveryUnlockSubmit();
     else handleUnlockSubmit();
   }
 });
@@ -977,16 +1172,26 @@ async function handleSetupSubmit() {
   var submitBtn = $('#unlock-form button[type="submit"]');
   submitBtn.disabled = true; submitBtn.textContent = 'Creating vault…';
 
-  var salt = crypto.getRandomValues(new Uint8Array(16));
-  var key = await deriveKey(pw, salt, PBKDF2_ITERATIONS);
-  var verifier = await encryptObj(key, VERIFIER_MARKER);
-  await idbPut('vault', {
-    id: 'config', salt: bufToB64(salt), iterations: PBKDF2_ITERATIONS,
-    verifierIv: verifier.iv, verifierCipher: verifier.cipher, createdAt: Date.now()
-  });
-  vaultKey = key;
-  notes = [];
-  completeUnlock();
+  try {
+    var saltPassword = crypto.getRandomValues(new Uint8Array(16));
+    var kek = await deriveKEK(pw, saltPassword, PBKDF2_ITERATIONS);
+    var dek = await generateDEK();
+    var wrapped = await wrapDEK(dek, kek);
+    await setVaultConfig({
+      id: 'config',
+      saltPassword: bufToB64(saltPassword), iterations: PBKDF2_ITERATIONS,
+      wrappedDekPasswordIv: wrapped.iv, wrappedDekPassword: wrapped.wrapped,
+      recoveryEnabled: false, saltRecovery: null, wrappedDekRecoveryIv: null, wrappedDekRecovery: null,
+      createdAt: Date.now()
+    });
+    vaultKey = dek;
+    notes = [];
+    recoveryAvailable = false;
+    completeUnlock();
+  } catch (err) {
+    submitBtn.disabled = false; submitBtn.textContent = 'Create Vault';
+    errEl.textContent = 'Could not create the vault (' + (err && err.message ? err.message : 'unknown error') + '). Please try again.';
+  }
 }
 
 async function handleUnlockSubmit() {
@@ -995,24 +1200,24 @@ async function handleUnlockSubmit() {
   var submitBtn = $('#unlock-form button[type="submit"]');
   submitBtn.disabled = true; submitBtn.textContent = 'Unlocking…';
   try {
-    var config = await idbGet('vault', 'config');
+    var config = await getVaultConfig();
     if (!config) throw new Error('no-vault');
-    var salt = b64ToBuf(config.salt);
-    var key = await deriveKey(pw, salt, config.iterations);
-    var check = await decryptObj(key, config.verifierIv, config.verifierCipher);
-    if (!check || check.check !== VERIFIER_MARKER.check) throw new Error('bad-password');
+    var saltPassword = b64ToBuf(config.saltPassword);
+    var kek = await deriveKEK(pw, saltPassword, config.iterations);
+    var dek = await unwrapDEK(config.wrappedDekPassword, config.wrappedDekPasswordIv, kek);
 
-    var rawNotes = await idbGetAll('notes');
+    var rawNotes = await getAllNoteRecords();
     var decrypted = [];
     for (var i = 0; i < rawNotes.length; i++) {
       try {
-        var plain = await decryptObj(key, rawNotes[i].iv, rawNotes[i].cipher);
+        var plain = await decryptObj(dek, rawNotes[i].iv, rawNotes[i].cipher);
         plain.id = rawNotes[i].id;
         decrypted.push(plain);
       } catch (e2) { /* skip unreadable record */ }
     }
-    vaultKey = key;
+    vaultKey = dek;
     notes = decrypted;
+    recoveryAvailable = !!config.recoveryEnabled;
     purgeExpiredTrash();
     errEl.textContent = '';
     completeUnlock();
@@ -1024,14 +1229,55 @@ async function handleUnlockSubmit() {
   }
 }
 
+async function handleRecoveryUnlockSubmit() {
+  var normalized = normalizeRecoveryInput($('#recovery-input').value);
+  var errEl = $('#lock-error');
+  var submitBtn = $('#unlock-form button[type="submit"]');
+  submitBtn.disabled = true; submitBtn.textContent = 'Unlocking…';
+  try {
+    var config = await getVaultConfig();
+    if (!config || !config.recoveryEnabled) throw new Error('no-recovery');
+    var saltRecovery = b64ToBuf(config.saltRecovery);
+    var kek = await deriveKEK(normalized, saltRecovery, config.iterations);
+    var dek = await unwrapDEK(config.wrappedDekRecovery, config.wrappedDekRecoveryIv, kek);
+
+    var rawNotes = await getAllNoteRecords();
+    var decrypted = [];
+    for (var i = 0; i < rawNotes.length; i++) {
+      try {
+        var plain = await decryptObj(dek, rawNotes[i].iv, rawNotes[i].cipher);
+        plain.id = rawNotes[i].id;
+        decrypted.push(plain);
+      } catch (e2) { /* skip unreadable record */ }
+    }
+    vaultKey = dek;
+    notes = decrypted;
+    recoveryAvailable = true;
+    purgeExpiredTrash();
+    errEl.textContent = '';
+    recoveryModeActive = true;
+    completeUnlock();
+  } catch (err) {
+    submitBtn.disabled = false; submitBtn.textContent = 'Unlock with Recovery Key';
+    errEl.textContent = 'That recovery key is not valid.';
+    lockCardShake();
+  }
+}
+
 function completeUnlock() {
   playUnlockAnimation(function () {
     $('#app-shell').hidden = false;
     $('#app-shell').classList.add('revealing');
     setTimeout(function () { $('#app-shell').classList.remove('revealing'); }, 260);
-    currentTab = 'notes';
     selectedNoteId = null;
+    if (recoveryModeActive) {
+      currentTab = 'settings';
+      changePasswordOpen = true;
+    } else {
+      currentTab = 'notes';
+    }
     renderApp();
+    if (recoveryModeActive) showToast('Recovery successful — set a new master password below', 'info');
     startIdleTimer();
     icons();
   });
@@ -1052,7 +1298,10 @@ function playUnlockAnimation(onDone) {
       bolt.classList.remove('retract');
       card.classList.remove('unlocking');
       var submitBtn = $('#unlock-form button[type="submit"]');
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = lockMode === 'setup' ? 'Create Vault' : 'Unlock'; }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = lockMode === 'setup' ? 'Create Vault' : (lockMode === 'recovery' ? 'Unlock with Recovery Key' : 'Unlock');
+      }
       onDone();
     }, 220);
   }, 380);
@@ -1063,11 +1312,18 @@ function playUnlockAnimation(onDone) {
    ============================================================ */
 function lockVault() {
   flushPendingSave(true);
+  var prevNote = selectedNoteId ? findNote(selectedNoteId) : null;
+  cleanupIfBlank(prevNote);
   stopIdleTimer();
   vaultKey = null;
   notes = [];
   selectedNoteId = null;
   openTagPopoverNoteId = null;
+  mobileShowEditor = false;
+  changePasswordOpen = false;
+  recoveryModeActive = false;
+  var notesPanelEl = $('.notes-panel');
+  if (notesPanelEl) notesPanelEl.classList.remove('mobile-show-editor');
   $('#app-shell').hidden = true;
   $('#lock-screen').classList.remove('hidden');
   renderLockScreen('unlock');
@@ -1114,7 +1370,10 @@ function renderApp() {
   icons();
 }
 function switchTab(tab) {
-  if (currentTab === 'notes') flushPendingSave(false);
+  if (currentTab === 'notes') {
+    flushPendingSave(false);
+    cleanupIfBlank(selectedNoteId ? findNote(selectedNoteId) : null);
+  }
   currentTab = tab;
   closeMobileSidebar();
   renderApp();
@@ -1195,6 +1454,7 @@ function renderNotesList() {
 
 function selectNote(id) {
   flushPendingSave(false);
+  if (id !== selectedNoteId) cleanupIfBlank(selectedNoteId ? findNote(selectedNoteId) : null);
   selectedNoteId = id;
   mobileShowEditor = true;
   $('.notes-panel').classList.add('mobile-show-editor');
@@ -1207,11 +1467,30 @@ function findNote(id) {
   return null;
 }
 
+/* A note nobody ever typed into shouldn't clutter the list or the store —
+   clean it up whenever navigation moves away from it. */
+function isNoteBlank(note) {
+  return !!note && !note.deleted && (!note.title || !note.title.trim()) &&
+    (!note.body || stripHtml(note.body).trim() === '') && (!note.tags || note.tags.length === 0);
+}
+function cleanupIfBlank(note) {
+  if (!isNoteBlank(note)) return false;
+  notes = notes.filter(function (n) { return n.id !== note.id; });
+  if (selectedNoteId === note.id) selectedNoteId = null;
+  deleteNoteRecord(note.id); // best-effort — harmless if it was never actually persisted
+  return true;
+}
+
 function createNewNote() {
   flushPendingSave(false);
   var existing = selectedNoteId ? findNote(selectedNoteId) : null;
-  var isBlank = existing && !existing.deleted && !existing.title && (!existing.body || stripHtml(existing.body).trim() === '') && (!existing.tags || existing.tags.length === 0);
-  if (isBlank) { renderEditor(); focusEditorTitle(); return; }
+  if (isNoteBlank(existing)) {
+    mobileShowEditor = true;
+    $('.notes-panel').classList.add('mobile-show-editor');
+    renderEditor();
+    focusEditorTitle();
+    return;
+  }
 
   var now = Date.now();
   var note = { id: uuid(), title: '', body: '', tags: [], pinned: false, deleted: false, deletedAt: null, createdAt: now, modifiedAt: now };
@@ -1278,9 +1557,16 @@ function renderEditor() {
 
   if (!note || note.deleted) {
     pane.innerHTML =
-      '<div class="editor-empty-state"><i data-lucide="file-text"></i>' +
-        '<p>Select a note from the list, or create a new one to get started.</p></div>';
+      '<div class="editor">' +
+        '<div class="editor-toolbar"><button class="btn-icon editor-back-btn" id="editor-back-btn" aria-label="Back to list"><i data-lucide="arrow-left"></i></button><div class="toolbar-spacer"></div></div>' +
+        '<div class="editor-empty-state"><i data-lucide="file-text"></i>' +
+          '<p>Select a note from the list, or create a new one to get started.</p></div>' +
+      '</div>';
     icons();
+    on($('#editor-back-btn'), 'click', function () {
+      mobileShowEditor = false;
+      $('.notes-panel').classList.remove('mobile-show-editor');
+    });
     return;
   }
 
@@ -1310,8 +1596,11 @@ function renderEditor() {
   icons();
 
   on($('#editor-back-btn'), 'click', function () {
+    flushPendingSave(false);
+    cleanupIfBlank(note);
     mobileShowEditor = false;
     $('.notes-panel').classList.remove('mobile-show-editor');
+    renderNotesList();
   });
   on($('#editor-title'), 'input', function (e) { note.title = e.target.value; scheduleSave(note); });
   var bodyEl = $('#editor-body');
@@ -1359,7 +1648,7 @@ function persistNoteImmediate(note) {
   note.modifiedAt = Date.now();
   if (!vaultKey) return;
   encryptObj(vaultKey, note).then(function (enc) {
-    return idbPut('notes', { id: note.id, iv: enc.iv, cipher: enc.cipher });
+    return saveNoteRecord({ id: note.id, iv: enc.iv, cipher: enc.cipher });
   }).catch(function () { showToast('Could not save note', 'danger'); });
 }
 
@@ -1443,7 +1732,7 @@ function purgeExpiredTrash() {
   var toRemove = notes.filter(function (n) { return n.deleted && n.deletedAt && n.deletedAt < cutoff; });
   if (!toRemove.length) return;
   notes = notes.filter(function (n) { return !(n.deleted && n.deletedAt && n.deletedAt < cutoff); });
-  toRemove.forEach(function (n) { idbDelete('notes', n.id); });
+  toRemove.forEach(function (n) { deleteNoteRecord(n.id); });
 }
 function renderTrashList() {
   var container = $('#trash-list');
@@ -1493,7 +1782,7 @@ function confirmPurgeNote(id) {
     confirmLabel: 'Delete Forever', danger: true,
     onConfirm: function () {
       notes = notes.filter(function (x) { return x.id !== id; });
-      idbDelete('notes', id);
+      deleteNoteRecord(id);
       renderTrashList();
       updateTrashBadge();
       showToast('Note permanently deleted', 'success');
@@ -1508,7 +1797,7 @@ on($('#empty-trash-btn'), 'click', function () {
     message: trashed.length + ' note' + (trashed.length === 1 ? '' : 's') + ' will be permanently deleted. This cannot be undone.',
     confirmLabel: 'Empty Trash', danger: true,
     onConfirm: function () {
-      trashed.forEach(function (n) { idbDelete('notes', n.id); });
+      trashed.forEach(function (n) { deleteNoteRecord(n.id); });
       notes = notes.filter(function (n) { return !n.deleted; });
       renderTrashList();
       updateTrashBadge();
@@ -1522,45 +1811,68 @@ on($('#empty-trash-btn'), 'click', function () {
    ============================================================ */
 function renderSettings() {
   var el = $('#settings-content');
-  el.innerHTML =
-    '<section class="settings-section">' +
-      '<h2>Security</h2>' +
-      '<form id="change-password-form">' +
+  var cpBlock = changePasswordOpen ? (
+    '<form id="change-password-form">' +
+      (recoveryModeActive ? '' :
         '<div class="field password-field">' +
           '<label for="cp-current">Current password</label>' +
           '<div class="password-field-inner"><input type="password" id="cp-current" autocomplete="current-password" required></div>' +
-        '</div>' +
-        '<div class="field password-field">' +
-          '<label for="cp-new">New password</label>' +
-          '<div class="password-field-inner"><input type="password" id="cp-new" autocomplete="new-password" required minlength="8"></div>' +
-          '<span class="field-hint">At least 8 characters.</span>' +
-        '</div>' +
-        '<div class="field password-field">' +
-          '<label for="cp-confirm">Confirm new password</label>' +
-          '<div class="password-field-inner"><input type="password" id="cp-confirm" autocomplete="new-password" required minlength="8"></div>' +
-        '</div>' +
-        '<p class="field-error" id="cp-error"></p>' +
-        '<button type="submit" class="btn btn-primary" id="cp-submit">Change Password</button>' +
-      '</form>' +
+        '</div>'
+      ) +
+      (recoveryModeActive ? '<p class="field-hint" style="margin-bottom:var(--space-4);">You unlocked with your recovery key, so your old password isn\'t needed — just choose a new one.</p>' : '') +
+      '<div class="field password-field">' +
+        '<label for="cp-new">New password</label>' +
+        '<div class="password-field-inner"><input type="password" id="cp-new" autocomplete="new-password" required minlength="8"></div>' +
+        '<span class="field-hint">At least 8 characters.</span>' +
+      '</div>' +
+      '<div class="field password-field">' +
+        '<label for="cp-confirm">Confirm new password</label>' +
+        '<div class="password-field-inner"><input type="password" id="cp-confirm" autocomplete="new-password" required minlength="8"></div>' +
+      '</div>' +
+      '<p class="field-error" id="cp-error"></p>' +
+      '<div class="form-actions-row">' +
+        '<button type="button" class="btn btn-ghost" id="cp-cancel-btn">Cancel</button>' +
+        '<button type="submit" class="btn btn-primary" id="cp-submit">' + (recoveryModeActive ? 'Set New Password' : 'Change Password') + '</button>' +
+      '</div>' +
+    '</form>'
+  ) : (
+    '<button class="btn btn-ghost" id="cp-toggle-btn"><i data-lucide="key-round"></i>Change Password</button>'
+  );
+
+  el.innerHTML =
+    '<section class="settings-section">' +
+      '<h2>Security</h2>' +
+      '<div class="security-block">' + cpBlock + '</div>' +
+      '<div class="security-block security-block-divided">' +
+        '<div class="setting-row-label" style="margin-bottom:4px;">Recovery Key</div>' +
+        '<p class="setting-row-desc" style="margin-bottom:var(--space-3);">' +
+          (recoveryAvailable
+            ? 'A recovery key is set up for this vault. Anyone who has it can unlock your notes without your password — keep it as safe as the password itself.'
+            : "Strictly optional. Generate a one-time recovery key so you can get back into your notes if you ever forget your master password. Skip this if you'd rather rely on your memory alone.") +
+        '</p>' +
+        (recoveryAvailable
+          ? '<button class="btn btn-danger-ghost" id="revoke-recovery-btn"><i data-lucide="shield-off"></i>Revoke Recovery Key</button>'
+          : '<button class="btn btn-ghost" id="generate-recovery-btn"><i data-lucide="key-round"></i>Generate Recovery Key</button>') +
+      '</div>' +
     '</section>' +
 
     '<section class="settings-section">' +
       '<h2>Vault Behavior</h2>' +
       '<div class="setting-row">' +
-        '<div><div class="setting-row-label">Auto-lock after inactivity</div><div class="setting-row-desc">Locks the vault and clears the session key from memory.</div></div>' +
+        '<div class="setting-row-text"><div class="setting-row-label">Auto-lock after inactivity</div><div class="setting-row-desc">Locks the vault and clears the session key from memory.</div></div>' +
         '<select class="select" id="autolock-select">' +
           '<option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="never">Never</option>' +
         '</select>' +
       '</div>' +
       '<div class="setting-row">' +
-        '<div><div class="setting-row-label">Lock when tab loses focus</div><div class="setting-row-desc">Lock immediately when you switch away from this tab.</div></div>' +
+        '<div class="setting-row-text"><div class="setting-row-label">Lock when tab loses focus</div><div class="setting-row-desc">Lock immediately when you switch away from this tab.</div></div>' +
         '<label class="toggle-switch"><input type="checkbox" id="lock-on-blur-toggle"><span class="toggle-track"></span><span class="toggle-thumb"></span></label>' +
       '</div>' +
     '</section>' +
 
     '<section class="settings-section">' +
       '<h2>Backup</h2>' +
-      '<p class="setting-row-desc" style="margin-bottom:var(--space-4);">Export a full copy of your vault. It stays encrypted — only your master password can open it.</p>' +
+      '<p class="setting-row-desc" style="margin-bottom:var(--space-4);">Export a full copy of your vault. It stays encrypted — only your master password (or recovery key) can open it.</p>' +
       '<div class="setting-row-actions">' +
         '<button class="btn btn-ghost" id="export-backup-btn"><i data-lucide="download"></i>Export Encrypted Backup</button>' +
         '<button class="btn btn-ghost" id="import-backup-btn"><i data-lucide="upload"></i>Import Backup</button>' +
@@ -1578,6 +1890,16 @@ function renderSettings() {
           '<button class="segmented-btn" data-theme-choice="amoled">AMOLED</button>' +
         '</div>' +
       '</div>' +
+      (prefs.theme === 'amoled' ?
+        '<div class="setting-row">' +
+          '<div class="setting-row-text"><div class="setting-row-label">AMOLED Accent</div><div class="setting-row-desc">The highlight color for buttons and active states on true black.</div></div>' +
+          '<div class="segmented" id="amoled-accent-switcher">' +
+            '<button class="segmented-btn" data-amoled-choice="gold">Gold</button>' +
+            '<button class="segmented-btn" data-amoled-choice="platinum">Platinum</button>' +
+            '<button class="segmented-btn" data-amoled-choice="black">Black</button>' +
+          '</div>' +
+        '</div>'
+      : '') +
     '</section>' +
 
     '<section class="settings-section">' +
@@ -1590,6 +1912,12 @@ function renderSettings() {
         }).join('') +
       '</ul></div>' +
       '<p class="built-by">Built by <a href="https://github.com/OneFileDev" target="_blank" rel="noopener noreferrer">OneFileDev</a></p>' +
+    '</section>' +
+
+    '<section class="settings-section settings-section-danger">' +
+      '<h2>Danger Zone</h2>' +
+      '<p class="setting-row-desc" style="margin-bottom:var(--space-4);">Permanently erase this entire vault — every note, your master password, and any recovery key — from this device. There is no undo.</p>' +
+      '<button class="btn btn-danger-ghost" id="erase-all-btn"><i data-lucide="alert-triangle"></i>Erase All Data</button>' +
     '</section>';
 
   $('#autolock-select').value = prefs.autoLockMinutes;
@@ -1597,7 +1925,20 @@ function renderSettings() {
   renderThemeSwitcherState();
   icons();
 
-  on($('#change-password-form'), 'submit', handleChangePassword);
+  if (changePasswordOpen) {
+    on($('#change-password-form'), 'submit', handleChangePassword);
+    on($('#cp-cancel-btn'), 'click', function () {
+      var wasRecovery = recoveryModeActive;
+      changePasswordOpen = false;
+      recoveryModeActive = false;
+      if (wasRecovery) switchTab('notes'); else renderSettings();
+    });
+  } else {
+    on($('#cp-toggle-btn'), 'click', function () { changePasswordOpen = true; renderSettings(); });
+  }
+  on($('#generate-recovery-btn'), 'click', handleGenerateRecoveryKey);
+  on($('#revoke-recovery-btn'), 'click', handleRevokeRecoveryKey);
+  on($('#erase-all-btn'), 'click', showEraseAllDataModal);
   on($('#autolock-select'), 'change', function (e) { prefs.autoLockMinutes = e.target.value; savePrefs(); resetIdleTimer(); showToast('Auto-lock updated', 'success'); });
   on($('#lock-on-blur-toggle'), 'change', function (e) { prefs.lockOnBlur = e.target.checked; savePrefs(); });
   on($('#export-backup-btn'), 'click', exportBackup);
@@ -1605,11 +1946,16 @@ function renderSettings() {
   $all('.segmented-btn[data-theme-choice]', el).forEach(function (b) {
     on(b, 'click', function () { setTheme(b.getAttribute('data-theme-choice')); });
   });
+  $all('.segmented-btn[data-amoled-choice]', el).forEach(function (b) {
+    on(b, 'click', function () { setAmoledAccent(b.getAttribute('data-amoled-choice')); });
+  });
 }
 
 async function handleChangePassword(e) {
   e.preventDefault();
-  var current = $('#cp-current').value, next = $('#cp-new').value, confirm = $('#cp-confirm').value;
+  var currentField = $('#cp-current');
+  var current = currentField ? currentField.value : null;
+  var next = $('#cp-new').value, confirm = $('#cp-confirm').value;
   var errEl = $('#cp-error');
   errEl.textContent = '';
   if (next.length < 8) { errEl.textContent = 'New password must be at least 8 characters.'; return; }
@@ -1617,41 +1963,161 @@ async function handleChangePassword(e) {
 
   var submitBtn = $('#cp-submit');
   submitBtn.disabled = true; submitBtn.textContent = 'Verifying…';
-  try {
-    var config = await idbGet('vault', 'config');
-    var salt = b64ToBuf(config.salt);
-    var checkKey = await deriveKey(current, salt, config.iterations);
-    var check = await decryptObj(checkKey, config.verifierIv, config.verifierCipher);
-    if (!check || check.check !== VERIFIER_MARKER.check) throw new Error('bad-current');
-  } catch (err) {
-    errEl.textContent = 'Current password is incorrect.';
-    submitBtn.disabled = false; submitBtn.textContent = 'Change Password';
-    return;
+  var config = await getVaultConfig();
+  if (!recoveryModeActive) {
+    try {
+      var saltCurrent = b64ToBuf(config.saltPassword);
+      var kekCurrent = await deriveKEK(current, saltCurrent, config.iterations);
+      await unwrapDEK(config.wrappedDekPassword, config.wrappedDekPasswordIv, kekCurrent);
+    } catch (err) {
+      errEl.textContent = 'Current password is incorrect.';
+      submitBtn.disabled = false; submitBtn.textContent = 'Change Password';
+      return;
+    }
   }
 
-  submitBtn.textContent = 'Re-encrypting vault…';
+  submitBtn.textContent = 'Saving…';
   var newSalt = crypto.getRandomValues(new Uint8Array(16));
-  var newKey = await deriveKey(next, newSalt, PBKDF2_ITERATIONS);
-  var newVerifier = await encryptObj(newKey, VERIFIER_MARKER);
+  var newKek = await deriveKEK(next, newSalt, PBKDF2_ITERATIONS);
+  var newWrapped = await wrapDEK(vaultKey, newKek);
+  config.saltPassword = bufToB64(newSalt);
+  config.iterations = PBKDF2_ITERATIONS;
+  config.wrappedDekPasswordIv = newWrapped.iv;
+  config.wrappedDekPassword = newWrapped.wrapped;
+  await setVaultConfig(config);
 
-  for (var i = 0; i < notes.length; i++) {
-    var enc = await encryptObj(newKey, notes[i]);
-    await idbPut('notes', { id: notes[i].id, iv: enc.iv, cipher: enc.cipher });
-  }
-  await idbPut('vault', {
-    id: 'config', salt: bufToB64(newSalt), iterations: PBKDF2_ITERATIONS,
-    verifierIv: newVerifier.iv, verifierCipher: newVerifier.cipher, createdAt: config.createdAt || Date.now()
-  });
-  vaultKey = newKey;
-  submitBtn.disabled = false; submitBtn.textContent = 'Change Password';
-  e.target.reset();
+  var wasRecovery = recoveryModeActive;
+  recoveryModeActive = false;
+  changePasswordOpen = false;
   showToast('Master password changed', 'success');
+  if (wasRecovery) switchTab('notes'); else renderSettings();
+}
+
+async function handleGenerateRecoveryKey() {
+  var btn = $('#generate-recovery-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  var recoveryKey = generateRecoveryKey();
+  var normalized = normalizeRecoveryInput(recoveryKey);
+  var saltRecovery = crypto.getRandomValues(new Uint8Array(16));
+  var kek = await deriveKEK(normalized, saltRecovery, PBKDF2_ITERATIONS);
+  var wrapped = await wrapDEK(vaultKey, kek);
+  var config = await getVaultConfig();
+  config.recoveryEnabled = true;
+  config.saltRecovery = bufToB64(saltRecovery);
+  config.wrappedDekRecoveryIv = wrapped.iv;
+  config.wrappedDekRecovery = wrapped.wrapped;
+  await setVaultConfig(config);
+  recoveryAvailable = true;
+  renderSettings();
+  showRecoveryKeyModal(recoveryKey);
+}
+
+function handleRevokeRecoveryKey() {
+  showConfirm({
+    title: 'Revoke recovery key?',
+    message: 'Your current recovery key will stop working immediately. You can generate a new one anytime.',
+    confirmLabel: 'Revoke', danger: true,
+    onConfirm: async function () {
+      var config = await getVaultConfig();
+      config.recoveryEnabled = false;
+      config.saltRecovery = null; config.wrappedDekRecoveryIv = null; config.wrappedDekRecovery = null;
+      await setVaultConfig(config);
+      recoveryAvailable = false;
+      showToast('Recovery key revoked', 'success');
+      renderSettings();
+    }
+  });
+}
+
+function showRecoveryKeyModal(key) {
+  var root = $('#modal-root');
+  root.innerHTML =
+    '<div class="modal-backdrop" id="rk-backdrop">' +
+      '<div class="modal" role="dialog" aria-modal="true" style="max-width:440px;">' +
+        '<h3 class="modal-title">Your Recovery Key</h3>' +
+        '<p class="modal-message">Save this somewhere safe — a password manager, or printed and stored securely. It\'s the only way back into your notes if you forget your master password, and it will not be shown again.</p>' +
+        '<div class="recovery-key-box" id="recovery-key-box">' + escapeHtml(key) + '</div>' +
+        '<button class="btn btn-ghost btn-block" id="rk-copy-btn" style="margin-bottom:var(--space-4);"><i data-lucide="copy"></i>Copy to clipboard</button>' +
+        '<label class="rk-confirm-row"><input type="checkbox" id="rk-ack">I\'ve saved my recovery key somewhere safe</label>' +
+        '<button class="btn btn-primary btn-block" id="rk-done-btn" disabled>Done</button>' +
+      '</div>' +
+    '</div>';
+  icons();
+  var ack = $('#rk-ack'), doneBtn = $('#rk-done-btn');
+  on(ack, 'change', function () { doneBtn.disabled = !ack.checked; });
+  on($('#rk-copy-btn'), 'click', function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(key).then(function () { showToast('Recovery key copied', 'success'); })
+        .catch(function () { showToast('Could not copy — please select and copy manually', 'danger'); });
+    } else {
+      showToast('Could not copy — please select and copy manually', 'danger');
+    }
+  });
+  on(doneBtn, 'click', function () { root.innerHTML = ''; });
+}
+
+function showEraseAllDataModal() {
+  var root = $('#modal-root');
+  root.innerHTML =
+    '<div class="modal-backdrop" id="erase-backdrop">' +
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<h3 class="modal-title">Erase All Data</h3>' +
+        '<p class="modal-message">This permanently deletes your entire vault — every note, your master password, and any recovery key — from this device. There is no undo.</p>' +
+        '<div class="field password-field">' +
+          '<label for="erase-password">Master password</label>' +
+          '<div class="password-field-inner"><input type="password" id="erase-password" autocomplete="current-password"></div>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="erase-confirm-text">Type DELETE to confirm</label>' +
+          '<input type="text" id="erase-confirm-text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE">' +
+        '</div>' +
+        '<p class="field-error" id="erase-error"></p>' +
+        '<div class="modal-actions">' +
+          '<button class="btn btn-ghost" id="erase-cancel-btn">Cancel</button>' +
+          '<button class="btn btn-danger" id="erase-confirm-btn" disabled>Erase Everything</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  icons();
+  var pwField = $('#erase-password'), textField = $('#erase-confirm-text'), confirmBtn = $('#erase-confirm-btn'), errEl = $('#erase-error');
+  function updateBtnState() {
+    confirmBtn.disabled = !(pwField.value.length > 0 && textField.value.trim().toUpperCase() === 'DELETE');
+  }
+  on(pwField, 'input', updateBtnState);
+  on(textField, 'input', updateBtnState);
+  function close() { root.innerHTML = ''; }
+  on($('#erase-cancel-btn'), 'click', close);
+  on($('#erase-backdrop'), 'click', function (e) { if (e.target.id === 'erase-backdrop') close(); });
+  on(confirmBtn, 'click', async function () {
+    errEl.textContent = '';
+    confirmBtn.disabled = true; confirmBtn.textContent = 'Erasing…';
+    try {
+      var config = await getVaultConfig();
+      if (!config) throw new Error('no-vault');
+      var salt = b64ToBuf(config.saltPassword);
+      var kek = await deriveKEK(pwField.value, salt, config.iterations);
+      await unwrapDEK(config.wrappedDekPassword, config.wrappedDekPasswordIv, kek); // throws if the password is wrong
+
+      await clearAllStorage();
+      close();
+      vaultKey = null; notes = []; selectedNoteId = null;
+      recoveryAvailable = false; recoveryModeActive = false; changePasswordOpen = false;
+      stopIdleTimer();
+      $('#app-shell').hidden = true;
+      $('#lock-screen').classList.remove('hidden');
+      renderLockScreen('setup');
+      showToast('All data erased from this device', 'success');
+    } catch (err) {
+      confirmBtn.disabled = false; confirmBtn.textContent = 'Erase Everything';
+      errEl.textContent = 'Incorrect password.';
+    }
+  });
 }
 
 /* Export / Import */
 async function exportBackup() {
-  var config = await idbGet('vault', 'config');
-  var rawNotes = await idbGetAll('notes');
+  var config = await getVaultConfig();
+  var rawNotes = await getAllNoteRecords();
   var payload = { app: 'NotesVault', version: APP_VERSION, exportedAt: new Date().toISOString(), vault: config, notes: rawNotes };
   var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
@@ -1669,7 +2135,7 @@ on($('#import-file-input'), 'change', function (e) {
   reader.onload = function () {
     var parsed;
     try { parsed = JSON.parse(reader.result); } catch (err) { showToast('That file is not a valid NotesVault backup', 'danger'); return; }
-    if (!parsed || !parsed.vault || !parsed.vault.salt || !Array.isArray(parsed.notes)) {
+    if (!parsed || !parsed.vault || !parsed.vault.saltPassword || !Array.isArray(parsed.notes)) {
       showToast('That file is not a valid NotesVault backup', 'danger'); return;
     }
     showConfirm({
@@ -1683,10 +2149,8 @@ on($('#import-file-input'), 'change', function (e) {
   e.target.value = '';
 });
 async function performImport(parsed) {
-  await idbClear('vault');
-  await idbClear('notes');
-  await idbPut('vault', parsed.vault);
-  for (var i = 0; i < parsed.notes.length; i++) await idbPut('notes', parsed.notes[i]);
+  await replaceAllStorage(parsed.vault, parsed.notes);
+  recoveryAvailable = !!parsed.vault.recoveryEnabled;
   showToast('Vault imported', 'success');
   lockVault();
   renderLockScreen('imported');
