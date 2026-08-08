@@ -350,12 +350,15 @@ input::placeholder { color: var(--text-tertiary); }
 
 .notes-list { flex: 1; overflow-y: auto; padding: var(--space-2); }
 .note-item {
-  display: flex; flex-direction: column; gap: 4px; padding: var(--space-3); border-radius: var(--radius-md);
+  display: flex; flex-direction: row; align-items: flex-start; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md);
   cursor: pointer; border: 1px solid transparent; margin-bottom: 2px;
   transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
 .note-item:hover { background: var(--surface-2); }
 .note-item.active { background: var(--surface-2); border-color: var(--border-strong); }
+.note-item-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.note-item-check { flex-shrink: 0; padding-top: 2px; }
+.note-item-check input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
 .note-item-top { display: flex; align-items: center; gap: 6px; }
 .note-item-title { font-size: 14px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note-item-title.untitled { color: var(--text-tertiary); font-weight: 500; }
@@ -364,9 +367,52 @@ input::placeholder { color: var(--text-tertiary); }
 .note-item .pin-indicator svg { width: 12px; height: 12px; }
 .note-item-snippet { font-size: 12.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
 .note-item-meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-tertiary); margin-top: 2px; }
-.note-item-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.note-item-tags { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin-top: 2px; }
 .mini-tag { font-size: 10.5px; font-weight: 600; color: var(--tag-c); }
 .mini-tag::before { content: '#'; opacity: 0.7; }
+.mini-folder { display: inline-flex; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); }
+.mini-folder svg { width: 10px; height: 10px; }
+
+.folder-bar { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border); }
+.folder-picker-btn {
+  display: inline-flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--text-secondary);
+  font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); max-width: 100%; overflow: hidden;
+}
+.folder-picker-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+.folder-picker-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.folder-picker-btn svg:last-child { width: 12px; height: 12px; opacity: 0.6; }
+.folder-picker-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dropdown-popover {
+  position: absolute; top: calc(100% + 4px); left: var(--space-4); z-index: 30; min-width: 200px; max-width: 260px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: var(--space-2); max-height: 320px; overflow-y: auto;
+}
+.dropdown-popover-right { left: auto; right: var(--space-4); }
+.dropdown-item {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); width: 100%; text-align: left;
+  background: transparent; border: none; color: var(--text-primary); font-size: 13px; font-weight: 500;
+  padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer;
+}
+.dropdown-item:hover { background: var(--surface-2); }
+.dropdown-item.active { background: var(--surface-2); font-weight: 700; }
+.dropdown-item svg { width: 14px; height: 14px; flex-shrink: 0; }
+.dropdown-item-count { font-size: 11px; color: var(--text-tertiary); font-weight: 600; }
+.dropdown-item-block { justify-content: flex-start; }
+.dropdown-sep { height: 1px; background: var(--border); margin: var(--space-2) 4px; }
+
+.tag-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border); }
+.filter-tag-chip {
+  font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-full); cursor: pointer;
+  background: transparent; border: 1px solid color-mix(in srgb, var(--tag-c) 40%, transparent); color: var(--tag-c);
+}
+.filter-tag-chip.active { background: var(--tag-c); color: #fff; border-color: var(--tag-c); }
+
+.bulk-action-bar {
+  display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4);
+  background: var(--surface-2); border-bottom: 1px solid var(--border);
+}
+.bulk-count { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.bulk-actions { display: flex; gap: 4px; }
 
 .editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
 .editor-empty-state, .empty-state {
@@ -433,6 +479,16 @@ input::placeholder { color: var(--text-tertiary); }
 .editor-body:empty::before { content: attr(data-placeholder); color: var(--text-tertiary); pointer-events: none; }
 .editor-body ul, .editor-body ol { padding-left: 1.4em; margin: 0.6em 0; }
 .editor-body b, .editor-body strong { font-weight: 700; }
+.editor-body h2 { font-size: 20px; font-weight: 700; margin: 0.9em 0 0.35em; letter-spacing: -0.01em; line-height: 1.3; }
+.editor-body h3 { font-size: 17px; font-weight: 700; margin: 0.8em 0 0.3em; letter-spacing: -0.01em; line-height: 1.3; }
+.checklist-item { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; }
+.checklist-checkbox { margin-top: 5px; width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.checklist-item.checked { color: var(--text-tertiary); text-decoration: line-through; }
+.code-block {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4); margin: 0.6em 0; overflow-x: auto;
+}
+.code-block code { font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; white-space: pre; }
 .editor-meta { padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-tertiary); flex-shrink: 0; }
 
 /* ============================================================
@@ -506,6 +562,43 @@ input::placeholder { color: var(--text-tertiary); }
 .modal-title { font-family: var(--font-display); font-size: 18px; font-weight: 550; margin-bottom: var(--space-2); }
 .modal-message { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: var(--space-5); }
 .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
+.manage-folders-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--space-4); max-height: 280px; overflow-y: auto; }
+.manage-folder-row { display: flex; align-items: center; gap: var(--space-2); padding: 8px 4px; border-top: 1px solid var(--border); }
+.manage-folder-row:first-child { border-top: none; }
+.manage-folder-name { flex: 1; font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.manage-folder-count { font-size: 11.5px; color: var(--text-tertiary); font-weight: 600; }
+
+.palette-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 250; display: flex;
+  align-items: flex-start; justify-content: center; padding-top: 12vh; padding-left: var(--space-4); padding-right: var(--space-4);
+  animation: fadeIn var(--dur-fast) var(--ease);
+}
+.palette {
+  width: 100%; max-width: 520px; background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden;
+  animation: modalIn var(--dur-base) var(--ease-strong);
+}
+.palette-input-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border-bottom: 1px solid var(--border); }
+.palette-input-row svg { width: 17px; height: 17px; color: var(--text-tertiary); flex-shrink: 0; }
+.palette-input-row input { flex: 1; border: none; background: transparent; font-size: 15px; color: var(--text-primary); padding: 0; }
+.palette-input-row input::placeholder { color: var(--text-tertiary); }
+.palette-results { max-height: 360px; overflow-y: auto; padding: var(--space-2); }
+.palette-item {
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; text-align: left; background: transparent; border: none;
+  color: var(--text-primary); font-size: 13.5px; font-weight: 500; padding: 10px 12px; border-radius: var(--radius-md); cursor: pointer;
+}
+.palette-item svg { width: 15px; height: 15px; color: var(--text-tertiary); flex-shrink: 0; }
+.palette-item span:not(.palette-item-hint) { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette-item.active { background: var(--surface-2); }
+.palette-item-hint { font-size: 10.5px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+.palette-empty { padding: var(--space-5); text-align: center; color: var(--text-tertiary); font-size: 13px; }
+
+.activity-list { display: flex; flex-direction: column; gap: 2px; }
+.activity-row { display: flex; align-items: center; gap: var(--space-3); padding: 8px 0; border-top: 1px solid var(--border); font-size: 13px; }
+.activity-row:first-child { border-top: none; }
+.activity-row svg { width: 14px; height: 14px; color: var(--text-tertiary); flex-shrink: 0; }
+.activity-label { flex: 1; color: var(--text-primary); }
+.activity-time { font-size: 11.5px; color: var(--text-tertiary); flex-shrink: 0; }
 
 .toast-container { position: fixed; bottom: var(--space-5); right: var(--space-5); z-index: 300; display: flex; flex-direction: column; gap: var(--space-2); }
 .toast {
@@ -634,8 +727,12 @@ input::placeholder { color: var(--text-tertiary); }
             <i data-lucide="search"></i>
             <input type="text" id="search-input" placeholder="Search notes" aria-label="Search notes">
           </div>
+          <button class="btn-icon" id="select-mode-btn" aria-label="Select notes" title="Select notes"><i data-lucide="list-checks"></i></button>
           <button class="btn-new" id="new-note-btn" aria-label="New note"><i data-lucide="plus"></i></button>
         </div>
+        <div class="folder-bar" id="folder-bar"></div>
+        <div class="tag-filter-bar" id="tag-filter-bar"></div>
+        <div class="bulk-action-bar" id="bulk-action-bar" hidden></div>
         <div class="notes-list" id="notes-list"></div>
       </div>
       <div class="editor-pane" id="editor-pane"></div>
@@ -676,11 +773,11 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.3.1';
+var APP_VERSION = '1.4.0';
 var CHANGELOG = [
+  { version: '1.4.0', date: 'Aug 2026', note: 'Added folders, sort, multi-select, checklists/headings/code blocks, a command palette, and optional biometric unlock.' },
   { version: '1.3.1', date: 'Aug 2026', note: 'Fixed the lock screen icon getting clipped on shorter viewports.' },
-  { version: '1.3.0', date: 'Aug 2026', note: 'Added a selectable AMOLED accent — Gold, Platinum, or Black — in Settings.' },
-  { version: '1.2.0', date: 'Aug 2026', note: 'Fixed a vault-creation bug, added Erase All Data, and fixed cramped text layouts on mobile.' }
+  { version: '1.3.0', date: 'Aug 2026', note: 'Added a selectable AMOLED accent — Gold, Platinum, or Black — in Settings.' }
 ];
 var TAG_COLORS = [
   { id: 'amber', label: 'Amber' },
@@ -775,6 +872,12 @@ async function unwrapDEK(wrappedB64, ivB64, kek) {
   // Throws if the KEK is wrong (GCM auth tag mismatch) — this IS the password/recovery-key check.
   return crypto.subtle.unwrapKey('raw', wrappedBuf, kek, { name: 'AES-GCM', iv: iv }, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
 }
+/* WebAuthn PRF output is already a high-entropy 32-byte secret from the authenticator,
+   not a low-entropy human password — so unlike deriveKEK, this skips PBKDF2 stretching
+   and imports it directly as the wrapping key. */
+async function kekFromRawBytes(bytes) {
+  return crypto.subtle.importKey('raw', bytes.slice(0, 32), { name: 'AES-GCM' }, false, ['wrapKey', 'unwrapKey']);
+}
 async function encryptObj(key, obj) {
   var iv = crypto.getRandomValues(new Uint8Array(12));
   var data = new TextEncoder().encode(JSON.stringify(obj));
@@ -800,6 +903,61 @@ function generateRecoveryKey() {
 }
 function normalizeRecoveryInput(str) {
   return (str || '').toUpperCase().replace(/[^A-Z2-7]/g, '');
+}
+
+/* ============================================================
+   WEBAUTHN (PRF) — optional biometric unlock. Wraps the same DEK
+   as password/recovery, via a secret the authenticator derives
+   from the credential (not the password) — so it's a genuinely
+   independent unlock path, not a stored-password shortcut.
+   Everything here fails soft: any missing API or thrown error is
+   treated as "not available on this device" and the feature hides.
+   ============================================================ */
+var WEBAUTHN_PRF_SALT = new TextEncoder().encode('NotesVault-PRF-Unlock-Salt-v1');
+
+async function webAuthnPlatformAvailable() {
+  try {
+    if (!window.PublicKeyCredential || !navigator.credentials) return false;
+    if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+      return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    }
+    return true;
+  } catch (e) { return false; }
+}
+
+async function enrollBiometricCredential() {
+  var cred = await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'NotesVault' },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'notesvault-user', displayName: 'NotesVault' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { userVerification: 'required', authenticatorAttachment: 'platform', residentKey: 'required' },
+      extensions: { prf: {} },
+      timeout: 60000
+    }
+  });
+  if (!cred) throw new Error('no-credential');
+  var ext = cred.getClientExtensionResults();
+  if (!ext.prf || !ext.prf.enabled) throw new Error('prf-unsupported');
+  var secretBytes = await getBiometricSecret(bufToB64(new Uint8Array(cred.rawId)));
+  return { credentialId: bufToB64(new Uint8Array(cred.rawId)), secretBytes: secretBytes };
+}
+
+async function getBiometricSecret(credentialIdB64) {
+  var assertion = await navigator.credentials.get({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ id: b64ToBuf(credentialIdB64), type: 'public-key' }],
+      userVerification: 'required',
+      extensions: { prf: { eval: { first: WEBAUTHN_PRF_SALT } } },
+      timeout: 60000
+    }
+  });
+  if (!assertion) throw new Error('no-assertion');
+  var ext = assertion.getClientExtensionResults();
+  if (!ext.prf || !ext.prf.results || !ext.prf.results.first) throw new Error('prf-unavailable');
+  return new Uint8Array(ext.prf.results.first);
 }
 
 /* ============================================================
@@ -956,10 +1114,21 @@ var pendingNote = null;
 var idleTimer = null;
 var lockMode = 'unlock';     // 'setup' | 'unlock' | 'recovery' | 'imported'
 var openTagPopoverNoteId = null;
+var openFolderPickerNoteId = null;
 var tagPopoverColor = TAG_COLORS[0].id;
 var recoveryAvailable = false;   // does the current vault have a recovery key enabled?
 var recoveryModeActive = false;  // did we just unlock via recovery key (nudges a password reset)?
 var changePasswordOpen = false;  // is the change-password form expanded in Settings?
+var folders = [];                // [{id, name}] — decrypted, in-memory only while unlocked
+var activityLog = [];            // [{ts, event, detail}] — decrypted, in-memory only while unlocked
+var currentFolderId = 'all';     // 'all' | 'none' | a folder id — notes-list filter
+var sortMode = localStorage.getItem('nv_sort_mode') || 'modified'; // 'modified' | 'created' | 'title'
+var selectMode = false;          // multi-select mode in the notes list
+var selectedNoteIds = [];        // ids checked in multi-select mode
+var activeTagFilters = [];       // tag labels currently filtering the notes list
+var biometricAvailable = false;  // does the current vault have biometric unlock enabled?
+var commandPaletteOpen = false;
+var ACTIVITY_LOG_LIMIT = 50;
 
 var prefs = {
   theme: localStorage.getItem('nv_theme') || 'auto',
@@ -974,6 +1143,43 @@ function savePrefs() {
   localStorage.setItem('nv_autolock', prefs.autoLockMinutes);
   localStorage.setItem('nv_lock_on_blur', prefs.lockOnBlur ? '1' : '0');
   localStorage.setItem('nv_amoled_accent', prefs.amoledAccent);
+}
+
+/* ============================================================
+   VAULT META — folders and the activity log are encrypted together
+   under the same DEK as notes, so they never leak in plaintext.
+   Only successful, unlocked-session events are logged — a failed
+   unlock attempt has no key to encrypt a record with, and logging
+   it in the clear would itself be a metadata leak, so it's simply
+   not recorded. This is a deliberate zero-knowledge tradeoff.
+   ============================================================ */
+async function persistVaultMeta(keyOverride) {
+  var key = keyOverride || vaultKey;
+  if (!key) return;
+  try {
+    var config = await getVaultConfig();
+    if (!config) return;
+    var enc = await encryptObj(key, { folders: folders, activityLog: activityLog });
+    config.metaIv = enc.iv; config.metaCipher = enc.cipher;
+    await setVaultConfig(config);
+  } catch (e) { /* best-effort */ }
+}
+function logActivity(event, detail, keyOverride) {
+  activityLog.unshift({ ts: Date.now(), event: event, detail: detail || null });
+  if (activityLog.length > ACTIVITY_LOG_LIMIT) activityLog.length = ACTIVITY_LOG_LIMIT;
+  persistVaultMeta(keyOverride);
+}
+async function loadVaultMeta(dek, config) {
+  if (config.metaCipher) {
+    try {
+      var meta = await decryptObj(dek, config.metaIv, config.metaCipher);
+      folders = meta.folders || [];
+      activityLog = meta.activityLog || [];
+      return;
+    } catch (e) { /* fall through to defaults below */ }
+  }
+  folders = [];
+  activityLog = [];
 }
 
 /* ============================================================
@@ -1072,6 +1278,92 @@ function showConfirm(opts) {
 }
 
 /* ============================================================
+   COMMAND PALETTE (Cmd/Ctrl+K)
+   ============================================================ */
+var COMMANDS = [
+  { id: 'new-note', label: 'New Note', icon: 'plus', action: function () { switchTab('notes'); createNewNote(); } },
+  { id: 'go-notes', label: 'Go to Notes', icon: 'file-text', action: function () { switchTab('notes'); } },
+  { id: 'go-trash', label: 'Go to Trash', icon: 'trash-2', action: function () { switchTab('trash'); } },
+  { id: 'go-settings', label: 'Go to Settings', icon: 'settings', action: function () { switchTab('settings'); } },
+  { id: 'select-notes', label: 'Select Multiple Notes', icon: 'list-checks', action: function () { switchTab('notes'); if (!selectMode) toggleSelectMode(); } },
+  { id: 'toggle-theme', label: 'Cycle Theme', icon: 'monitor', action: function () { cycleTheme(); } },
+  { id: 'export-backup', label: 'Export Encrypted Backup', icon: 'download', action: function () { exportBackup(); } },
+  { id: 'lock-vault', label: 'Lock Vault', icon: 'lock', action: function () { lockVault('manual'); } }
+];
+var paletteSelectedIndex = 0;
+function showCommandPalette() {
+  commandPaletteOpen = true;
+  var root = $('#modal-root');
+  root.innerHTML =
+    '<div class="palette-backdrop" id="palette-backdrop">' +
+      '<div class="palette" role="dialog" aria-modal="true">' +
+        '<div class="palette-input-row"><i data-lucide="search"></i><input type="text" id="palette-input" placeholder="Search notes or type a command…" autocomplete="off"></div>' +
+        '<div class="palette-results" id="palette-results"></div>' +
+      '</div>' +
+    '</div>';
+  icons();
+  paletteSelectedIndex = 0;
+  renderPaletteResults('');
+  var input = $('#palette-input');
+  on(input, 'input', function () { paletteSelectedIndex = 0; renderPaletteResults(input.value); });
+  on($('#palette-backdrop'), 'click', function (e) { if (e.target.id === 'palette-backdrop') closeCommandPalette(); });
+  on(input, 'keydown', handlePaletteKeydown);
+  setTimeout(function () { input.focus(); }, 20);
+}
+function closeCommandPalette() {
+  commandPaletteOpen = false;
+  if ($('#palette-backdrop')) $('#modal-root').innerHTML = '';
+}
+function paletteMatches(query) {
+  var q = query.trim().toLowerCase();
+  var noteResults = !q ? [] : notes.filter(function (n) { return !n.deleted && (n.title || '').toLowerCase().indexOf(q) !== -1; })
+    .slice(0, 8)
+    .map(function (n) { return { type: 'note', id: n.id, label: n.title && n.title.trim() ? n.title : 'Untitled note', icon: 'file-text' }; });
+  var cmdResults = COMMANDS.filter(function (c) { return !q || c.label.toLowerCase().indexOf(q) !== -1; })
+    .map(function (c) { return { type: 'command', label: c.label, icon: c.icon, action: c.action }; });
+  return noteResults.concat(cmdResults);
+}
+function renderPaletteResults(query) {
+  var results = paletteMatches(query);
+  var container = $('#palette-results');
+  if (!results.length) { container.innerHTML = '<div class="palette-empty">No matches.</div>'; return; }
+  if (paletteSelectedIndex >= results.length) paletteSelectedIndex = results.length - 1;
+  container.innerHTML = results.map(function (r, i) {
+    return '<button class="palette-item' + (i === paletteSelectedIndex ? ' active' : '') + '" data-index="' + i + '">' +
+      '<i data-lucide="' + r.icon + '"></i><span>' + escapeHtml(r.label) + '</span>' +
+      (r.type === 'note' ? '<span class="palette-item-hint">Note</span>' : '') +
+    '</button>';
+  }).join('');
+  icons();
+  $all('.palette-item', container).forEach(function (btn) {
+    on(btn, 'click', function () { executePaletteResult(results[parseInt(btn.getAttribute('data-index'), 10)]); });
+  });
+}
+function handlePaletteKeydown(e) {
+  var results = paletteMatches($('#palette-input').value);
+  if (e.key === 'ArrowDown') {
+    e.preventDefault(); paletteSelectedIndex = Math.min(paletteSelectedIndex + 1, results.length - 1);
+    renderPaletteResults($('#palette-input').value); scrollPaletteIntoView();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault(); paletteSelectedIndex = Math.max(paletteSelectedIndex - 1, 0);
+    renderPaletteResults($('#palette-input').value); scrollPaletteIntoView();
+  } else if (e.key === 'Enter') {
+    e.preventDefault(); if (results[paletteSelectedIndex]) executePaletteResult(results[paletteSelectedIndex]);
+  } else if (e.key === 'Escape') {
+    e.preventDefault(); closeCommandPalette();
+  }
+}
+function scrollPaletteIntoView() {
+  var active = $('.palette-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+function executePaletteResult(result) {
+  closeCommandPalette();
+  if (result.type === 'note') { switchTab('notes'); selectNote(result.id); }
+  else result.action();
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 async function init() {
@@ -1086,6 +1378,7 @@ async function init() {
   var config = await getVaultConfig();
   lockMode = config ? 'unlock' : 'setup';
   recoveryAvailable = !!(config && config.recoveryEnabled);
+  biometricAvailable = !!(config && config.biometricEnabled);
   renderLockScreen(lockMode);
   bindGlobalEvents();
 }
@@ -1141,11 +1434,13 @@ function renderLockScreen(mode) {
         '</div>' +
       '</div>' +
       '<button type="submit" class="btn btn-primary btn-block">Unlock</button>' +
+      (biometricAvailable ? '<button type="button" class="btn btn-ghost btn-block" id="biometric-unlock-btn" style="margin-top:var(--space-3);"><i data-lucide="fingerprint"></i>Unlock with Biometrics</button>' : '') +
       (recoveryAvailable ? '<button type="button" class="lock-secondary-link" id="use-recovery-link">Forgot password? Use your recovery key</button>' : '');
   }
   icons();
   on($('#use-recovery-link'), 'click', function () { renderLockScreen('recovery'); });
   on($('#back-to-password-link'), 'click', function () { renderLockScreen('unlock'); });
+  on($('#biometric-unlock-btn'), 'click', handleBiometricUnlockSubmit);
   $all('.btn-toggle-visibility', form).forEach(function (btn) {
     on(btn, 'click', function () {
       var target = $('#' + btn.getAttribute('data-target'));
@@ -1193,11 +1488,17 @@ async function handleSetupSubmit() {
       saltPassword: bufToB64(saltPassword), iterations: PBKDF2_ITERATIONS,
       wrappedDekPasswordIv: wrapped.iv, wrappedDekPassword: wrapped.wrapped,
       recoveryEnabled: false, saltRecovery: null, wrappedDekRecoveryIv: null, wrappedDekRecovery: null,
+      biometricEnabled: false, biometricCredentialId: null, wrappedDekBiometricIv: null, wrappedDekBiometric: null,
+      metaIv: null, metaCipher: null,
       createdAt: Date.now()
     });
     vaultKey = dek;
     notes = [];
+    folders = [];
+    activityLog = [];
     recoveryAvailable = false;
+    biometricAvailable = false;
+    logActivity('vault-created');
     completeUnlock();
   } catch (err) {
     submitBtn.disabled = false; submitBtn.textContent = 'Create Vault';
@@ -1229,8 +1530,11 @@ async function handleUnlockSubmit() {
     vaultKey = dek;
     notes = decrypted;
     recoveryAvailable = !!config.recoveryEnabled;
+    biometricAvailable = !!config.biometricEnabled;
+    await loadVaultMeta(dek, config);
     purgeExpiredTrash();
     errEl.textContent = '';
+    logActivity('unlock', { method: 'password' });
     completeUnlock();
   } catch (err) {
     submitBtn.disabled = false; submitBtn.textContent = 'Unlock';
@@ -1264,14 +1568,52 @@ async function handleRecoveryUnlockSubmit() {
     vaultKey = dek;
     notes = decrypted;
     recoveryAvailable = true;
+    biometricAvailable = !!config.biometricEnabled;
+    await loadVaultMeta(dek, config);
     purgeExpiredTrash();
     errEl.textContent = '';
     recoveryModeActive = true;
+    logActivity('unlock', { method: 'recovery' });
     completeUnlock();
   } catch (err) {
     submitBtn.disabled = false; submitBtn.textContent = 'Unlock with Recovery Key';
     errEl.textContent = 'That recovery key is not valid.';
     lockCardShake();
+  }
+}
+
+async function handleBiometricUnlockSubmit() {
+  var btn = $('#biometric-unlock-btn');
+  var errEl = $('#lock-error');
+  errEl.textContent = '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Waiting for biometric…'; }
+  try {
+    var config = await getVaultConfig();
+    if (!config || !config.biometricEnabled) throw new Error('no-biometric');
+    var secretBytes = await getBiometricSecret(config.biometricCredentialId);
+    var kek = await kekFromRawBytes(secretBytes);
+    var dek = await unwrapDEK(config.wrappedDekBiometric, config.wrappedDekBiometricIv, kek);
+
+    var rawNotes = await getAllNoteRecords();
+    var decrypted = [];
+    for (var i = 0; i < rawNotes.length; i++) {
+      try {
+        var plain = await decryptObj(dek, rawNotes[i].iv, rawNotes[i].cipher);
+        plain.id = rawNotes[i].id;
+        decrypted.push(plain);
+      } catch (e2) { /* skip unreadable record */ }
+    }
+    vaultKey = dek;
+    notes = decrypted;
+    recoveryAvailable = !!config.recoveryEnabled;
+    biometricAvailable = true;
+    await loadVaultMeta(dek, config);
+    purgeExpiredTrash();
+    logActivity('unlock', { method: 'biometric' });
+    completeUnlock();
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Unlock with Biometrics'; }
+    errEl.textContent = 'Biometric unlock failed or was cancelled. Use your password instead.';
   }
 }
 
@@ -1321,18 +1663,26 @@ function playUnlockAnimation(onDone) {
 /* ============================================================
    LOCK VAULT
    ============================================================ */
-function lockVault() {
+function lockVault(reason) {
   flushPendingSave(true);
   var prevNote = selectedNoteId ? findNote(selectedNoteId) : null;
   cleanupIfBlank(prevNote);
+  var keyAtLockTime = vaultKey;
+  if (keyAtLockTime) logActivity('lock', { reason: reason || 'manual' }, keyAtLockTime);
   stopIdleTimer();
   vaultKey = null;
   notes = [];
+  folders = [];
+  activityLog = [];
   selectedNoteId = null;
   openTagPopoverNoteId = null;
   mobileShowEditor = false;
   changePasswordOpen = false;
   recoveryModeActive = false;
+  selectMode = false;
+  selectedNoteIds = [];
+  currentFolderId = 'all';
+  activeTagFilters = [];
   var notesPanelEl = $('.notes-panel');
   if (notesPanelEl) notesPanelEl.classList.remove('mobile-show-editor');
   $('#app-shell').hidden = true;
@@ -1343,7 +1693,7 @@ function lockVault() {
 /* A single window-blur listener covers both switching browser tabs and
    switching away to another application — visibilitychange alone would miss the latter. */
 window.addEventListener('blur', function () {
-  if (prefs.lockOnBlur && vaultKey) lockVault();
+  if (prefs.lockOnBlur && vaultKey) lockVault('blur');
 });
 
 /* Idle auto-lock */
@@ -1351,7 +1701,7 @@ function startIdleTimer() {
   stopIdleTimer();
   if (prefs.autoLockMinutes === 'never') return;
   var ms = parseInt(prefs.autoLockMinutes, 10) * 60000;
-  idleTimer = setTimeout(function () { lockVault(); showToast('Vault locked after inactivity', 'info'); }, ms);
+  idleTimer = setTimeout(function () { lockVault('idle'); showToast('Vault locked after inactivity', 'info'); }, ms);
 }
 function stopIdleTimer() { if (idleTimer) clearTimeout(idleTimer); idleTimer = null; }
 function resetIdleTimer() { if (vaultKey) startIdleTimer(); }
@@ -1405,6 +1755,16 @@ function updateTrashBadge() {
 function visibleNotes() {
   var q = searchQuery.trim().toLowerCase();
   var list = notes.filter(function (n) { return !n.deleted; });
+  if (currentFolderId === 'none') {
+    list = list.filter(function (n) { return !n.folderId; });
+  } else if (currentFolderId !== 'all') {
+    list = list.filter(function (n) { return n.folderId === currentFolderId; });
+  }
+  if (activeTagFilters.length) {
+    list = list.filter(function (n) {
+      return (n.tags || []).some(function (t) { return activeTagFilters.indexOf(t.label) !== -1; });
+    });
+  }
   if (q) {
     list = list.filter(function (n) {
       var text = (n.title || '') + ' ' + stripHtml(n.body || '') + ' ' + (n.tags || []).map(function (t) { return t.label; }).join(' ');
@@ -1413,11 +1773,32 @@ function visibleNotes() {
   }
   list.sort(function (a, b) {
     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    if (sortMode === 'created') return (b.createdAt || 0) - (a.createdAt || 0);
+    if (sortMode === 'title') {
+      var at = (a.title || '').trim().toLowerCase(), bt = (b.title || '').trim().toLowerCase();
+      if (!at && bt) return 1;
+      if (at && !bt) return -1;
+      return at.localeCompare(bt);
+    }
     return (b.modifiedAt || 0) - (a.modifiedAt || 0);
   });
   return list;
 }
+function allTagLabels() {
+  var seen = {}, labels = [];
+  notes.forEach(function (n) {
+    if (n.deleted) return;
+    (n.tags || []).forEach(function (t) {
+      if (!seen[t.label]) { seen[t.label] = true; labels.push(t.label); }
+    });
+  });
+  return labels;
+}
 function renderNotesList() {
+  renderFolderBar();
+  renderTagFilterBar();
+  renderBulkActionBar();
+
   var container = $('#notes-list');
   var scrollTop = container.scrollTop;
   var list = visibleNotes();
@@ -1428,7 +1809,7 @@ function renderNotesList() {
     return;
   }
   if (list.length === 0) {
-    container.innerHTML = '<div class="empty-state"><i data-lucide="search-x"></i><p>No notes match your search.</p></div>';
+    container.innerHTML = '<div class="empty-state"><i data-lucide="search-x"></i><p>No notes match your search or filters.</p></div>';
     icons();
     return;
   }
@@ -1440,15 +1821,21 @@ function renderNotesList() {
     var tagsHtml = (n.tags || []).slice(0, 3).map(function (t) {
       return '<span class="mini-tag tag-' + t.colorId + '">' + escapeHtml(t.label) + '</span>';
     }).join('');
+    var folder = n.folderId ? findFolder(n.folderId) : null;
+    var folderHtml = folder ? '<span class="mini-folder"><i data-lucide="folder"></i>' + escapeHtml(folder.name) + '</span>' : '';
+    var checked = selectedNoteIds.indexOf(n.id) !== -1;
     return (
-      '<div class="note-item' + (n.id === selectedNoteId ? ' active' : '') + (n.pinned ? ' pinned' : '') + '" data-id="' + n.id + '" tabindex="0" role="button" aria-label="Open note ' + title + '">' +
-        '<div class="note-item-top">' +
-          '<span class="note-item-title' + titleClass + '">' + title + '</span>' +
-          '<span class="pin-indicator"><i data-lucide="pin"></i></span>' +
+      '<div class="note-item' + (n.id === selectedNoteId ? ' active' : '') + (n.pinned ? ' pinned' : '') + (selectMode ? ' select-mode' : '') + '" data-id="' + n.id + '" tabindex="0" role="button" aria-label="Open note ' + title + '">' +
+        (selectMode ? '<span class="note-item-check"><input type="checkbox" class="note-select-checkbox" data-id="' + n.id + '"' + (checked ? ' checked' : '') + '></span>' : '') +
+        '<div class="note-item-body">' +
+          '<div class="note-item-top">' +
+            '<span class="note-item-title' + titleClass + '">' + title + '</span>' +
+            '<span class="pin-indicator"><i data-lucide="pin"></i></span>' +
+          '</div>' +
+          '<div class="note-item-snippet">' + snippet + '</div>' +
+          (tagsHtml || folderHtml ? '<div class="note-item-tags">' + folderHtml + tagsHtml + '</div>' : '') +
+          '<div class="note-item-meta"><span>' + formatDate(sortMode === 'created' ? n.createdAt : n.modifiedAt) + '</span></div>' +
         '</div>' +
-        '<div class="note-item-snippet">' + snippet + '</div>' +
-        (tagsHtml ? '<div class="note-item-tags">' + tagsHtml + '</div>' : '') +
-        '<div class="note-item-meta"><span>' + formatDate(n.modifiedAt) + '</span></div>' +
       '</div>'
     );
   }).join('');
@@ -1456,9 +1843,303 @@ function renderNotesList() {
   icons();
 
   $all('.note-item', container).forEach(function (el) {
-    on(el, 'click', function () { selectNote(el.getAttribute('data-id')); });
+    on(el, 'click', function (e) {
+      if (selectMode) {
+        if (e.target.classList.contains('note-select-checkbox')) return; // checkbox handles its own toggle
+        toggleNoteSelected(el.getAttribute('data-id'));
+        return;
+      }
+      selectNote(el.getAttribute('data-id'));
+    });
     on(el, 'keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectNote(el.getAttribute('data-id')); }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (selectMode) toggleNoteSelected(el.getAttribute('data-id'));
+        else selectNote(el.getAttribute('data-id'));
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var items = $all('.note-item', container);
+        var idx = items.indexOf(el);
+        var next = items[e.key === 'ArrowDown' ? idx + 1 : idx - 1];
+        if (next) next.focus();
+      }
+    });
+  });
+  $all('.note-select-checkbox', container).forEach(function (cb) {
+    on(cb, 'change', function () { toggleNoteSelected(cb.getAttribute('data-id')); });
+  });
+}
+
+/* ---- Folders ---- */
+function findFolder(id) {
+  for (var i = 0; i < folders.length; i++) if (folders[i].id === id) return folders[i];
+  return null;
+}
+function folderNoteCount(folderId) {
+  return notes.filter(function (n) { return !n.deleted && n.folderId === folderId; }).length;
+}
+function renderFolderBar() {
+  var bar = $('#folder-bar');
+  if (!bar) return;
+  var current = currentFolderId === 'all' ? 'All Notes' : (currentFolderId === 'none' ? 'No Folder' : (findFolder(currentFolderId) ? findFolder(currentFolderId).name : 'All Notes'));
+  if (currentFolderId !== 'all' && currentFolderId !== 'none' && !findFolder(currentFolderId)) currentFolderId = 'all';
+  bar.innerHTML =
+    '<button class="folder-picker-btn" id="folder-picker-btn"><i data-lucide="folder"></i><span>' + escapeHtml(current) + '</span><i data-lucide="chevron-down"></i></button>' +
+    '<button class="btn-icon" id="sort-mode-btn" aria-label="Sort notes" title="Sort: ' + SORT_LABELS[sortMode] + '"><i data-lucide="arrow-down-up"></i></button>';
+  icons();
+  on($('#folder-picker-btn'), 'click', function (e) { e.stopPropagation(); toggleFolderMenu(); });
+  on($('#sort-mode-btn'), 'click', function (e) { e.stopPropagation(); toggleSortMenu(); });
+}
+var folderMenuOpen = false, sortMenuOpen = false;
+function toggleFolderMenu() {
+  sortMenuOpen = false;
+  folderMenuOpen = !folderMenuOpen;
+  renderFolderMenuPopover();
+}
+function toggleSortMenu() {
+  folderMenuOpen = false;
+  sortMenuOpen = !sortMenuOpen;
+  renderFolderMenuPopover();
+}
+var SORT_LABELS = { modified: 'Last Edited', created: 'Date Created', title: 'Title A–Z' };
+function renderFolderMenuPopover() {
+  var existing = $('#folder-menu-popover'); if (existing) existing.remove();
+  var existingSort = $('#sort-menu-popover'); if (existingSort) existingSort.remove();
+  if (folderMenuOpen) {
+    var pop = document.createElement('div');
+    pop.className = 'dropdown-popover'; pop.id = 'folder-menu-popover';
+    var items = [{ id: 'all', name: 'All Notes' }, { id: 'none', name: 'No Folder' }].concat(folders);
+    pop.innerHTML = items.map(function (f) {
+      return '<button class="dropdown-item' + (f.id === currentFolderId ? ' active' : '') + '" data-folder-id="' + f.id + '"><span>' + escapeHtml(f.name) + '</span><span class="dropdown-item-count">' + (f.id === 'all' ? notes.filter(function (n) { return !n.deleted; }).length : (f.id === 'none' ? folderNoteCount(null) : folderNoteCount(f.id))) + '</span></button>';
+    }).join('') +
+      '<div class="dropdown-sep"></div>' +
+      '<button class="dropdown-item" id="new-folder-item"><i data-lucide="plus"></i><span>New Folder</span></button>' +
+      (folders.length ? '<button class="dropdown-item" id="manage-folders-item"><i data-lucide="settings"></i><span>Manage Folders</span></button>' : '');
+    $('#folder-bar').appendChild(pop);
+    icons();
+    $all('[data-folder-id]', pop).forEach(function (btn) {
+      on(btn, 'click', function () { currentFolderId = btn.getAttribute('data-folder-id'); folderMenuOpen = false; renderNotesList(); });
+    });
+    on($('#new-folder-item'), 'click', function () { folderMenuOpen = false; renderNotesList(); promptNewFolder(); });
+    on($('#manage-folders-item'), 'click', function () { folderMenuOpen = false; renderNotesList(); showManageFoldersModal(); });
+  }
+  if (sortMenuOpen) {
+    var spop = document.createElement('div');
+    spop.className = 'dropdown-popover dropdown-popover-right'; spop.id = 'sort-menu-popover';
+    spop.innerHTML = ['modified', 'created', 'title'].map(function (m) {
+      return '<button class="dropdown-item' + (m === sortMode ? ' active' : '') + '" data-sort="' + m + '"><span>' + SORT_LABELS[m] + '</span></button>';
+    }).join('');
+    $('#folder-bar').appendChild(spop);
+    $all('[data-sort]', spop).forEach(function (btn) {
+      on(btn, 'click', function () {
+        sortMode = btn.getAttribute('data-sort');
+        localStorage.setItem('nv_sort_mode', sortMode);
+        sortMenuOpen = false;
+        renderNotesList();
+      });
+    });
+  }
+}
+on(document, 'click', function () {
+  if (folderMenuOpen || sortMenuOpen) { folderMenuOpen = false; sortMenuOpen = false; renderFolderMenuPopover(); }
+});
+function promptNewFolder() {
+  showPromptModal({
+    title: 'New Folder', label: 'Folder name', placeholder: 'e.g. Work, Personal, Ideas', confirmLabel: 'Create',
+    onConfirm: function (name) {
+      name = name.trim();
+      if (!name) return;
+      folders.push({ id: uuid(), name: name });
+      persistVaultMeta();
+      renderNotesList();
+      showToast('Folder created', 'success');
+    }
+  });
+}
+function showManageFoldersModal() {
+  var root = $('#modal-root');
+  function render() {
+    root.innerHTML =
+      '<div class="modal-backdrop" id="folders-backdrop">' +
+        '<div class="modal" role="dialog" aria-modal="true">' +
+          '<h3 class="modal-title">Manage Folders</h3>' +
+          (folders.length === 0
+            ? '<p class="modal-message">No folders yet.</p>'
+            : '<div class="manage-folders-list">' + folders.map(function (f) {
+                return '<div class="manage-folder-row">' +
+                  '<span class="manage-folder-name">' + escapeHtml(f.name) + '</span>' +
+                  '<span class="manage-folder-count">' + folderNoteCount(f.id) + '</span>' +
+                  '<button class="btn-icon" data-rename="' + f.id + '" aria-label="Rename"><i data-lucide="pencil"></i></button>' +
+                  '<button class="btn-icon" data-delete="' + f.id + '" aria-label="Delete" style="color:var(--danger);"><i data-lucide="trash-2"></i></button>' +
+                '</div>';
+              }).join('') + '</div>') +
+          '<div class="modal-actions"><button class="btn btn-ghost" id="folders-close-btn">Close</button></div>' +
+        '</div>' +
+      '</div>';
+    icons();
+    on($('#folders-close-btn'), 'click', function () { root.innerHTML = ''; });
+    on($('#folders-backdrop'), 'click', function (e) { if (e.target.id === 'folders-backdrop') root.innerHTML = ''; });
+    $all('[data-rename]', root).forEach(function (btn) {
+      on(btn, 'click', function () {
+        var f = findFolder(btn.getAttribute('data-rename'));
+        if (!f) return;
+        showPromptModal({
+          title: 'Rename Folder', label: 'Folder name', placeholder: f.name, initialValue: f.name, confirmLabel: 'Save',
+          onConfirm: function (name) { name = name.trim(); if (!name) return; f.name = name; persistVaultMeta(); render(); renderNotesList(); }
+        });
+      });
+    });
+    $all('[data-delete]', root).forEach(function (btn) {
+      on(btn, 'click', function () {
+        var fid = btn.getAttribute('data-delete');
+        var f = findFolder(fid);
+        if (!f) return;
+        showConfirm({
+          title: 'Delete folder?',
+          message: '"' + f.name + '" will be deleted. Notes inside it are not deleted — they just become unfiled.',
+          confirmLabel: 'Delete Folder', danger: true,
+          onConfirm: function () {
+            folders = folders.filter(function (x) { return x.id !== fid; });
+            notes.forEach(function (n) { if (n.folderId === fid) { n.folderId = null; persistNoteImmediate(n); } });
+            if (currentFolderId === fid) currentFolderId = 'all';
+            persistVaultMeta();
+            render();
+            renderNotesList();
+            showToast('Folder deleted', 'success');
+          }
+        });
+      });
+    });
+  }
+  render();
+}
+function showPromptModal(opts) {
+  var root = $('#modal-root');
+  root.innerHTML =
+    '<div class="modal-backdrop" id="prompt-backdrop">' +
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<h3 class="modal-title">' + escapeHtml(opts.title) + '</h3>' +
+        '<div class="field"><label for="prompt-input">' + escapeHtml(opts.label) + '</label>' +
+        '<input type="text" id="prompt-input" placeholder="' + escapeHtml(opts.placeholder || '') + '" value="' + escapeHtml(opts.initialValue || '') + '" maxlength="60"></div>' +
+        '<div class="modal-actions">' +
+          '<button class="btn btn-ghost" id="prompt-cancel-btn">Cancel</button>' +
+          '<button class="btn btn-primary" id="prompt-confirm-btn">' + escapeHtml(opts.confirmLabel || 'Save') + '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  function close() { root.innerHTML = ''; }
+  on($('#prompt-cancel-btn'), 'click', close);
+  on($('#prompt-backdrop'), 'click', function (e) { if (e.target.id === 'prompt-backdrop') close(); });
+  on($('#prompt-confirm-btn'), 'click', function () { var v = $('#prompt-input').value; close(); opts.onConfirm && opts.onConfirm(v); });
+  var input = $('#prompt-input');
+  on(input, 'keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var v = input.value; close(); opts.onConfirm && opts.onConfirm(v); } });
+  setTimeout(function () { input.focus(); input.select(); }, 30);
+}
+
+/* ---- Tag filter chips ---- */
+function renderTagFilterBar() {
+  var bar = $('#tag-filter-bar');
+  if (!bar) return;
+  var labels = allTagLabels();
+  if (!labels.length) { bar.innerHTML = ''; bar.hidden = true; return; }
+  bar.hidden = false;
+  bar.innerHTML = labels.map(function (label) {
+    var active = activeTagFilters.indexOf(label) !== -1;
+    var colorId = null;
+    for (var i = 0; i < notes.length && !colorId; i++) {
+      var t = (notes[i].tags || []).find(function (t) { return t.label === label; });
+      if (t) colorId = t.colorId;
+    }
+    return '<button class="filter-tag-chip tag-' + colorId + (active ? ' active' : '') + '" data-tag-label="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>';
+  }).join('');
+  $all('[data-tag-label]', bar).forEach(function (btn) {
+    on(btn, 'click', function () {
+      var label = btn.getAttribute('data-tag-label');
+      var idx = activeTagFilters.indexOf(label);
+      if (idx === -1) activeTagFilters.push(label); else activeTagFilters.splice(idx, 1);
+      renderNotesList();
+    });
+  });
+}
+
+/* ---- Multi-select & bulk actions ---- */
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  selectedNoteIds = [];
+  $('#select-mode-btn').classList.toggle('active', selectMode);
+  renderNotesList();
+}
+function toggleNoteSelected(id) {
+  var idx = selectedNoteIds.indexOf(id);
+  if (idx === -1) selectedNoteIds.push(id); else selectedNoteIds.splice(idx, 1);
+  renderNotesList();
+}
+function renderBulkActionBar() {
+  var bar = $('#bulk-action-bar');
+  if (!bar) return;
+  if (!selectMode || selectedNoteIds.length === 0) { bar.hidden = true; bar.innerHTML = ''; return; }
+  bar.hidden = false;
+  bar.innerHTML =
+    '<span class="bulk-count">' + selectedNoteIds.length + ' selected</span>' +
+    '<div class="bulk-actions">' +
+      '<button class="btn-icon" id="bulk-pin-btn" aria-label="Pin"><i data-lucide="pin"></i></button>' +
+      '<button class="btn-icon" id="bulk-folder-btn" aria-label="Move to folder"><i data-lucide="folder-input"></i></button>' +
+      '<button class="btn-icon" id="bulk-delete-btn" aria-label="Delete" style="color:var(--danger);"><i data-lucide="trash-2"></i></button>' +
+    '</div>';
+  icons();
+  on($('#bulk-pin-btn'), 'click', function () {
+    selectedNoteIds.forEach(function (id) { var n = findNote(id); if (n) { n.pinned = true; persistNoteImmediate(n); } });
+    showToast('Pinned', 'success');
+    selectMode = false; selectedNoteIds = [];
+    renderNotesList(); renderEditor();
+  });
+  on($('#bulk-folder-btn'), 'click', function () { showBulkMoveToFolderMenu(); });
+  on($('#bulk-delete-btn'), 'click', function () {
+    var count = selectedNoteIds.length;
+    showConfirm({
+      title: 'Move to Trash?',
+      message: count + ' note' + (count === 1 ? '' : 's') + ' will be moved to Trash.',
+      confirmLabel: 'Move to Trash', danger: true,
+      onConfirm: function () {
+        selectedNoteIds.forEach(function (id) {
+          var n = findNote(id);
+          if (n) { n.deleted = true; n.deletedAt = Date.now(); persistNoteImmediate(n); }
+        });
+        if (selectedNoteIds.indexOf(selectedNoteId) !== -1) { selectedNoteId = null; }
+        selectMode = false; selectedNoteIds = [];
+        updateTrashBadge();
+        renderNotesList(); renderEditor();
+        showToast(count + ' note' + (count === 1 ? '' : 's') + ' moved to Trash', 'success');
+      }
+    });
+  });
+}
+function showBulkMoveToFolderMenu() {
+  var root = $('#modal-root');
+  var items = [{ id: null, name: 'No Folder' }].concat(folders);
+  root.innerHTML =
+    '<div class="modal-backdrop" id="bulk-folder-backdrop">' +
+      '<div class="modal" role="dialog" aria-modal="true">' +
+        '<h3 class="modal-title">Move to Folder</h3>' +
+        '<div class="manage-folders-list">' + items.map(function (f) {
+          return '<button class="dropdown-item dropdown-item-block" data-move-folder="' + (f.id || '') + '">' + escapeHtml(f.name) + '</button>';
+        }).join('') + '</div>' +
+        '<div class="modal-actions"><button class="btn btn-ghost" id="bulk-folder-cancel">Cancel</button></div>' +
+      '</div>' +
+    '</div>';
+  icons();
+  function close() { root.innerHTML = ''; }
+  on($('#bulk-folder-cancel'), 'click', close);
+  on($('#bulk-folder-backdrop'), 'click', function (e) { if (e.target.id === 'bulk-folder-backdrop') close(); });
+  $all('[data-move-folder]', root).forEach(function (btn) {
+    on(btn, 'click', function () {
+      var fid = btn.getAttribute('data-move-folder') || null;
+      var count = selectedNoteIds.length;
+      selectedNoteIds.forEach(function (id) { var n = findNote(id); if (n) { n.folderId = fid; persistNoteImmediate(n); } });
+      selectMode = false; selectedNoteIds = [];
+      close();
+      renderNotesList(); renderEditor();
+      showToast(count + ' note' + (count === 1 ? '' : 's') + ' moved', 'success');
     });
   });
 }
@@ -1504,7 +2185,8 @@ function createNewNote() {
   }
 
   var now = Date.now();
-  var note = { id: uuid(), title: '', body: '', tags: [], pinned: false, deleted: false, deletedAt: null, createdAt: now, modifiedAt: now };
+  var initialFolder = (currentFolderId !== 'all' && currentFolderId !== 'none') ? currentFolderId : null;
+  var note = { id: uuid(), title: '', body: '', tags: [], folderId: initialFolder, pinned: false, deleted: false, deletedAt: null, createdAt: now, modifiedAt: now };
   notes.unshift(note);
   selectedNoteId = note.id;
   mobileShowEditor = true;
@@ -1523,6 +2205,7 @@ function duplicateNote(id) {
   var now = Date.now();
   var copy = {
     id: uuid(), title: (n.title ? n.title + ' (Copy)' : ''), body: n.body, tags: (n.tags || []).map(function (t) { return { id: uuid(), label: t.label, colorId: t.colorId }; }),
+    folderId: n.folderId || null,
     pinned: false, deleted: false, deletedAt: null, createdAt: now, modifiedAt: now
   };
   notes.unshift(copy);
@@ -1587,8 +2270,12 @@ function renderEditor() {
         '<button class="btn-icon editor-back-btn" id="editor-back-btn" aria-label="Back to list"><i data-lucide="arrow-left"></i></button>' +
         '<button class="toolbar-btn" data-cmd="bold" aria-label="Bold"><i data-lucide="bold"></i></button>' +
         '<button class="toolbar-btn" data-cmd="italic" aria-label="Italic"><i data-lucide="italic"></i></button>' +
+        '<button class="toolbar-btn" data-block="h2" aria-label="Heading"><i data-lucide="heading-2"></i></button>' +
+        '<button class="toolbar-btn" data-block="h3" aria-label="Subheading"><i data-lucide="heading-3"></i></button>' +
         '<button class="toolbar-btn" data-cmd="insertUnorderedList" aria-label="Bullet list"><i data-lucide="list"></i></button>' +
         '<button class="toolbar-btn" data-cmd="insertOrderedList" aria-label="Numbered list"><i data-lucide="list-ordered"></i></button>' +
+        '<button class="toolbar-btn" id="editor-checklist-btn" aria-label="Checklist"><i data-lucide="list-todo"></i></button>' +
+        '<button class="toolbar-btn" id="editor-codeblock-btn" aria-label="Code block"><i data-lucide="code"></i></button>' +
         '<div class="toolbar-spacer"></div>' +
         '<button class="toolbar-btn' + (note.pinned ? ' active-state' : '') + '" id="editor-pin-btn" aria-label="Pin note"><i data-lucide="pin"></i></button>' +
         '<button class="toolbar-btn" id="editor-dup-btn" aria-label="Duplicate note"><i data-lucide="copy"></i></button>' +
@@ -1598,7 +2285,7 @@ function renderEditor() {
       '<div class="editor-scroll">' +
         '<input type="text" class="editor-title" id="editor-title" placeholder="Untitled note" value="' + escapeHtml(note.title || '') + '">' +
         '<div class="editor-tags-row" id="editor-tags-row"></div>' +
-        '<div class="editor-body" id="editor-body" contenteditable="true" data-placeholder="Start writing…">' + (note.body || '') + '</div>' +
+        '<div class="editor-body" id="editor-body" contenteditable="true" data-placeholder="Start writing… ( # heading · - list · [] checklist )">' + (note.body || '') + '</div>' +
       '</div>' +
       '<div class="editor-meta" id="editor-meta">Created ' + formatDateTime(note.createdAt) + ' · Edited ' + formatDateTime(note.modifiedAt) + '</div>' +
     '</div>';
@@ -1625,6 +2312,38 @@ function renderEditor() {
       bodyEl.focus();
     });
   });
+  $all('.toolbar-btn[data-block]').forEach(function (btn) {
+    on(btn, 'mousedown', function (e) {
+      e.preventDefault();
+      document.execCommand('formatBlock', false, btn.getAttribute('data-block'));
+      note.body = bodyEl.innerHTML;
+      scheduleSave(note);
+      bodyEl.focus();
+    });
+  });
+  on($('#editor-checklist-btn'), 'mousedown', function (e) {
+    e.preventDefault();
+    insertChecklistItem();
+    note.body = bodyEl.innerHTML;
+    scheduleSave(note);
+    bodyEl.focus();
+  });
+  on($('#editor-codeblock-btn'), 'mousedown', function (e) {
+    e.preventDefault();
+    insertCodeBlock();
+    note.body = bodyEl.innerHTML;
+    scheduleSave(note);
+    bodyEl.focus();
+  });
+  on(bodyEl, 'click', function (e) {
+    if (e.target.classList.contains('checklist-checkbox')) {
+      var item = e.target.closest('.checklist-item');
+      if (item) item.classList.toggle('checked', e.target.checked);
+      note.body = bodyEl.innerHTML;
+      scheduleSave(note);
+    }
+  });
+  on(bodyEl, 'keydown', function (e) { handleMarkdownShortcut(e, note, bodyEl); });
   on($('#editor-pin-btn'), 'click', function () { togglePin(note.id); });
   on($('#editor-dup-btn'), 'click', function () { duplicateNote(note.id); });
   on($('#editor-delete-btn'), 'click', function () {
@@ -1635,6 +2354,53 @@ function renderEditor() {
       onConfirm: function () { deleteNote(note.id); }
     });
   });
+}
+
+function insertChecklistItem() {
+  document.execCommand('insertHTML', false, '<div class="checklist-item"><input type="checkbox" class="checklist-checkbox">&nbsp;</div>');
+}
+function insertCodeBlock() {
+  var sel = window.getSelection();
+  var text = sel && sel.toString() ? escapeHtml(sel.toString()) : 'code';
+  document.execCommand('insertHTML', false, '<pre class="code-block"><code>' + text + '</code></pre><div><br></div>');
+}
+
+/* Markdown-style shortcuts: typing a trigger + space at the very start of a text
+   node converts the block. Fails safe — if anything doesn't match exactly, the
+   space is typed normally with no side effects. */
+function handleMarkdownShortcut(e, note, bodyEl) {
+  if (e.key !== ' ') return;
+  var sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  var range = sel.getRangeAt(0);
+  if (!range.collapsed) return;
+  var node = range.startContainer;
+  if (node.nodeType !== 3) return;
+  var textBefore = node.textContent.slice(0, range.startOffset);
+  var trigger = null, type = null;
+  if (textBefore === '#') { trigger = '#'; type = 'h2'; }
+  else if (textBefore === '##') { trigger = '##'; type = 'h3'; }
+  else if (textBefore === '-' || textBefore === '*') { trigger = textBefore; type = 'ul'; }
+  else if (/^\d+\.$/.test(textBefore)) { trigger = textBefore; type = 'ol'; }
+  else if (textBefore === '[]' || textBefore === '[ ]') { trigger = textBefore; type = 'checklist'; }
+  if (!type) return;
+
+  e.preventDefault();
+  var start = range.startOffset - trigger.length;
+  node.textContent = node.textContent.slice(0, start) + node.textContent.slice(range.startOffset);
+  var newRange = document.createRange();
+  newRange.setStart(node, start);
+  newRange.setEnd(node, start);
+  sel.removeAllRanges();
+  sel.addRange(newRange);
+
+  if (type === 'h2' || type === 'h3') document.execCommand('formatBlock', false, type);
+  else if (type === 'ul') document.execCommand('insertUnorderedList', false, null);
+  else if (type === 'ol') document.execCommand('insertOrderedList', false, null);
+  else if (type === 'checklist') insertChecklistItem();
+
+  note.body = bodyEl.innerHTML;
+  scheduleSave(note);
 }
 
 function scheduleSave(note) {
@@ -1672,10 +2438,35 @@ function renderEditorTags(note) {
       '<button data-remove-tag="' + t.id + '" aria-label="Remove tag"><i data-lucide="x"></i></button></span>';
   }).join('');
   var popoverOpen = openTagPopoverNoteId === note.id;
-  row.innerHTML = chips +
+  var currentFolder = note.folderId ? findFolder(note.folderId) : null;
+  var folderPickerOpen = openFolderPickerNoteId === note.id;
+  row.innerHTML =
+    '<span class="folder-chip-wrap">' +
+      '<button class="btn-add-tag" id="editor-folder-chip"><i data-lucide="folder"></i>' + (currentFolder ? escapeHtml(currentFolder.name) : 'No Folder') + '</button>' +
+      (folderPickerOpen ? renderEditorFolderPopoverHtml() : '') +
+    '</span>' +
+    chips +
     '<button class="btn-add-tag" id="add-tag-btn"><i data-lucide="tag"></i>Add tag</button>' +
     (popoverOpen ? renderTagPopoverHtml() : '');
   icons();
+
+  on($('#editor-folder-chip'), 'click', function () {
+    openFolderPickerNoteId = folderPickerOpen ? null : note.id;
+    openTagPopoverNoteId = null;
+    renderEditorTags(note);
+  });
+  if (folderPickerOpen) {
+    $all('[data-set-folder]', row).forEach(function (btn) {
+      on(btn, 'click', function () {
+        var fid = btn.getAttribute('data-set-folder') || null;
+        note.folderId = fid;
+        persistNoteImmediate(note);
+        openFolderPickerNoteId = null;
+        renderEditorTags(note);
+        renderNotesList();
+      });
+    });
+  }
 
   $all('[data-remove-tag]', row).forEach(function (btn) {
     on(btn, 'click', function () {
@@ -1687,6 +2478,7 @@ function renderEditorTags(note) {
   });
   on($('#add-tag-btn'), 'click', function () {
     openTagPopoverNoteId = popoverOpen ? null : note.id;
+    openFolderPickerNoteId = null;
     tagPopoverColor = TAG_COLORS[0].id;
     renderEditorTags(note);
   });
@@ -1722,6 +2514,14 @@ function renderTagPopoverHtml() {
       '<input type="text" id="tag-label-input" placeholder="Tag name" maxlength="24">' +
       '<button class="btn btn-primary" id="tag-add-confirm" style="padding:8px 12px;">Add</button>' +
     '</div>' +
+  '</div>';
+}
+function renderEditorFolderPopoverHtml() {
+  var items = [{ id: '', name: 'No Folder' }].concat(folders);
+  return '<div class="tag-popover folder-popover">' +
+    items.map(function (f) {
+      return '<button class="dropdown-item dropdown-item-block" data-set-folder="' + f.id + '">' + escapeHtml(f.name) + '</button>';
+    }).join('') +
   '</div>';
 }
 
@@ -1865,6 +2665,10 @@ function renderSettings() {
           ? '<button class="btn btn-danger-ghost" id="revoke-recovery-btn"><i data-lucide="shield-off"></i>Revoke Recovery Key</button>'
           : '<button class="btn btn-ghost" id="generate-recovery-btn"><i data-lucide="key-round"></i>Generate Recovery Key</button>') +
       '</div>' +
+      '<div class="security-block security-block-divided" id="biometric-block">' +
+        '<div class="setting-row-label" style="margin-bottom:4px;">Biometric Unlock</div>' +
+        '<p class="setting-row-desc">Checking device support…</p>' +
+      '</div>' +
     '</section>' +
 
     '<section class="settings-section">' +
@@ -1914,6 +2718,17 @@ function renderSettings() {
     '</section>' +
 
     '<section class="settings-section">' +
+      '<h2>Activity</h2>' +
+      '<p class="setting-row-desc" style="margin-bottom:var(--space-3);">Recent activity for this vault. Encrypted with everything else — visible only to you.</p>' +
+      '<div class="activity-list">' +
+        (activityLog.length === 0 ? '<p class="setting-row-desc">No activity recorded yet.</p>' :
+          activityLog.slice(0, 20).map(function (a) {
+            return '<div class="activity-row"><i data-lucide="' + activityIcon(a.event) + '"></i><span class="activity-label">' + escapeHtml(activityLabel(a)) + '</span><span class="activity-time">' + formatDateTime(a.ts) + '</span></div>';
+          }).join('')) +
+      '</div>' +
+    '</section>' +
+
+    '<section class="settings-section">' +
       '<h2>About</h2>' +
       '<p class="about-tagline">NotesVault — professional encrypted note-taking, zero-knowledge by design.</p>' +
       '<span class="version-badge">v' + APP_VERSION + '</span>' +
@@ -1950,6 +2765,7 @@ function renderSettings() {
   on($('#generate-recovery-btn'), 'click', handleGenerateRecoveryKey);
   on($('#revoke-recovery-btn'), 'click', handleRevokeRecoveryKey);
   on($('#erase-all-btn'), 'click', showEraseAllDataModal);
+  renderBiometricBlock();
   on($('#autolock-select'), 'change', function (e) { prefs.autoLockMinutes = e.target.value; savePrefs(); resetIdleTimer(); showToast('Auto-lock updated', 'success'); });
   on($('#lock-on-blur-toggle'), 'change', function (e) { prefs.lockOnBlur = e.target.checked; savePrefs(); });
   on($('#export-backup-btn'), 'click', exportBackup);
@@ -1996,6 +2812,7 @@ async function handleChangePassword(e) {
   config.wrappedDekPasswordIv = newWrapped.iv;
   config.wrappedDekPassword = newWrapped.wrapped;
   await setVaultConfig(config);
+  logActivity('password-changed');
 
   var wasRecovery = recoveryModeActive;
   recoveryModeActive = false;
@@ -2019,6 +2836,7 @@ async function handleGenerateRecoveryKey() {
   config.wrappedDekRecovery = wrapped.wrapped;
   await setVaultConfig(config);
   recoveryAvailable = true;
+  logActivity('recovery-key-generated');
   renderSettings();
   showRecoveryKeyModal(recoveryKey);
 }
@@ -2034,10 +2852,102 @@ function handleRevokeRecoveryKey() {
       config.saltRecovery = null; config.wrappedDekRecoveryIv = null; config.wrappedDekRecovery = null;
       await setVaultConfig(config);
       recoveryAvailable = false;
+      logActivity('recovery-key-revoked');
       showToast('Recovery key revoked', 'success');
       renderSettings();
     }
   });
+}
+
+/* ---- Biometric unlock (Settings UI) ---- */
+function renderBiometricBlock() {
+  webAuthnPlatformAvailable().then(function (ok) {
+    var block = $('#biometric-block');
+    if (!block) return; // navigated away before this resolved
+    if (!ok) {
+      block.innerHTML =
+        '<div class="setting-row-label" style="margin-bottom:4px;">Biometric Unlock</div>' +
+        '<p class="setting-row-desc">Not available on this device or browser.</p>';
+      return;
+    }
+    block.innerHTML =
+      '<div class="setting-row-label" style="margin-bottom:4px;">Biometric Unlock</div>' +
+      '<p class="setting-row-desc" style="margin-bottom:var(--space-3);">' +
+        (biometricAvailable
+          ? "Enabled. You can unlock with this device's Face ID, Touch ID, or Windows Hello, alongside your password."
+          : "Optional. Add this device's Face ID, Touch ID, or Windows Hello as a quick way to unlock, alongside your password.") +
+      '</p>' +
+      (biometricAvailable
+        ? '<button class="btn btn-danger-ghost" id="revoke-biometric-btn"><i data-lucide="shield-off"></i>Turn Off Biometric Unlock</button>'
+        : '<button class="btn btn-ghost" id="enable-biometric-btn"><i data-lucide="fingerprint"></i>Enable Biometric Unlock</button>');
+    icons();
+    on($('#enable-biometric-btn'), 'click', handleEnableBiometric);
+    on($('#revoke-biometric-btn'), 'click', handleRevokeBiometric);
+  });
+}
+async function handleEnableBiometric() {
+  var btn = $('#enable-biometric-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Waiting for biometric…'; }
+  try {
+    var result = await enrollBiometricCredential();
+    var kek = await kekFromRawBytes(result.secretBytes);
+    var wrapped = await wrapDEK(vaultKey, kek);
+    var config = await getVaultConfig();
+    config.biometricEnabled = true;
+    config.biometricCredentialId = result.credentialId;
+    config.wrappedDekBiometricIv = wrapped.iv;
+    config.wrappedDekBiometric = wrapped.wrapped;
+    await setVaultConfig(config);
+    biometricAvailable = true;
+    logActivity('biometric-enabled');
+    showToast('Biometric unlock enabled', 'success');
+    renderSettings();
+  } catch (err) {
+    showToast('Could not enable biometric unlock on this device', 'danger');
+    if (btn) { btn.disabled = false; btn.textContent = 'Enable Biometric Unlock'; }
+  }
+}
+function handleRevokeBiometric() {
+  showConfirm({
+    title: 'Turn off biometric unlock?',
+    message: 'You can always set it up again later. Your password and recovery key are unaffected.',
+    confirmLabel: 'Turn Off', danger: true,
+    onConfirm: async function () {
+      var config = await getVaultConfig();
+      config.biometricEnabled = false; config.biometricCredentialId = null;
+      config.wrappedDekBiometricIv = null; config.wrappedDekBiometric = null;
+      await setVaultConfig(config);
+      biometricAvailable = false;
+      logActivity('biometric-revoked');
+      showToast('Biometric unlock turned off', 'success');
+      renderSettings();
+    }
+  });
+}
+
+/* ---- Activity log display helpers ---- */
+function activityIcon(event) {
+  var map = {
+    unlock: 'log-in', lock: 'log-out', 'vault-created': 'sparkles', 'password-changed': 'key-round',
+    'recovery-key-generated': 'shield-check', 'recovery-key-revoked': 'shield-off',
+    'biometric-enabled': 'fingerprint', 'biometric-revoked': 'fingerprint', 'backup-exported': 'download'
+  };
+  return map[event] || 'circle';
+}
+function activityLabel(a) {
+  var d = a.detail || {};
+  switch (a.event) {
+    case 'unlock': return 'Unlocked via ' + (d.method === 'password' ? 'password' : d.method === 'recovery' ? 'recovery key' : 'biometrics');
+    case 'lock': return 'Locked (' + (d.reason === 'idle' ? 'inactivity' : d.reason === 'blur' ? 'switched away' : d.reason === 'import' ? 'vault imported' : 'manual') + ')';
+    case 'vault-created': return 'Vault created';
+    case 'password-changed': return 'Master password changed';
+    case 'recovery-key-generated': return 'Recovery key generated';
+    case 'recovery-key-revoked': return 'Recovery key revoked';
+    case 'biometric-enabled': return 'Biometric unlock enabled';
+    case 'biometric-revoked': return 'Biometric unlock turned off';
+    case 'backup-exported': return 'Backup exported';
+    default: return a.event;
+  }
 }
 
 function showRecoveryKeyModal(key) {
@@ -2112,7 +3022,9 @@ function showEraseAllDataModal() {
       await clearAllStorage();
       close();
       vaultKey = null; notes = []; selectedNoteId = null;
-      recoveryAvailable = false; recoveryModeActive = false; changePasswordOpen = false;
+      folders = []; activityLog = []; currentFolderId = 'all'; activeTagFilters = [];
+      selectMode = false; selectedNoteIds = [];
+      recoveryAvailable = false; recoveryModeActive = false; changePasswordOpen = false; biometricAvailable = false;
       stopIdleTimer();
       $('#app-shell').hidden = true;
       $('#lock-screen').classList.remove('hidden');
@@ -2137,6 +3049,7 @@ async function exportBackup() {
   a.href = url; a.download = 'notesvault-backup-' + stamp + '.json';
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
+  logActivity('backup-exported');
   showToast('Backup exported', 'success');
 }
 on($('#import-file-input'), 'change', function (e) {
@@ -2161,9 +3074,12 @@ on($('#import-file-input'), 'change', function (e) {
 });
 async function performImport(parsed) {
   await replaceAllStorage(parsed.vault, parsed.notes);
+  vaultKey = null; // must be cleared before lockVault(), or it would try to encrypt a
+                    // lock-event with the OLD key and write it into the NEW imported config
   recoveryAvailable = !!parsed.vault.recoveryEnabled;
+  biometricAvailable = !!parsed.vault.biometricEnabled;
   showToast('Vault imported', 'success');
-  lockVault();
+  lockVault('import');
   renderLockScreen('imported');
 }
 
@@ -2190,20 +3106,27 @@ function closeMobileSidebar() {
 function bindGlobalEvents() {
   $all('.nav-item').forEach(function (btn) { on(btn, 'click', function () { switchTab(btn.getAttribute('data-tab')); }); });
   on($('#new-note-btn'), 'click', createNewNote);
+  on($('#select-mode-btn'), 'click', toggleSelectMode);
   on($('#fold-btn'), 'click', toggleSidebarFold);
   on($('#menu-btn'), 'click', openMobileSidebar);
   on($('#sidebar-backdrop'), 'click', closeMobileSidebar);
   on($('#settings-btn'), 'click', function () { switchTab('settings'); });
   on($('#theme-toggle-btn'), 'click', cycleTheme);
-  on($('#lock-btn'), 'click', lockVault);
+  on($('#lock-btn'), 'click', function () { lockVault('manual'); });
 
   on(document, 'keydown', function (e) {
     if (e.key === 'Escape') {
+      if (commandPaletteOpen) { closeCommandPalette(); return; }
       if (openTagPopoverNoteId) { var n = findNote(openTagPopoverNoteId); openTagPopoverNoteId = null; if (n) renderEditorTags(n); }
+      if (openFolderPickerNoteId) { var n2 = findNote(openFolderPickerNoteId); openFolderPickerNoteId = null; if (n2) renderEditorTags(n2); }
       $('#modal-root').innerHTML = '';
     }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-      if (currentTab === 'notes') { e.preventDefault(); var s = $('#search-input'); if (s) s.focus(); }
+      e.preventDefault();
+      if (vaultKey) showCommandPalette();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
+      if (vaultKey && !commandPaletteOpen) { e.preventDefault(); switchTab('notes'); createNewNote(); }
     }
   });
 
