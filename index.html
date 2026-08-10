@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,550;9..144,650&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
 /* ============================================================
    NOTESVAULT — DESIGN TOKENS
@@ -492,7 +493,34 @@ input::placeholder { color: var(--text-tertiary); }
   padding: var(--space-3) var(--space-4); margin: 0.6em 0; overflow-x: auto;
 }
 .code-block code { font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; white-space: pre; }
-.editor-meta { padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-tertiary); flex-shrink: 0; }
+.note-image { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); margin: 0.6em 0; display: block; box-shadow: var(--shadow-sm); }
+.editor-meta { padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-tertiary); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+
+/* Syntax highlighting — muted, theme-adaptive token colors rather than an off-the-shelf
+   loud theme, to stay consistent with the app's restrained palette. */
+[data-theme="light"] {
+  --code-keyword: #7A3B8A; --code-string: #2F6B4F; --code-number: #8A5A1F; --code-attr: #2F5B8A;
+}
+[data-theme="dark"], [data-theme="amoled"] {
+  --code-keyword: #C299D9; --code-string: #8FCDA8; --code-number: #D9B97A; --code-attr: #8FB8D9;
+}
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section { color: var(--code-keyword); }
+.hljs-string, .hljs-attr, .hljs-symbol, .hljs-bullet, .hljs-addition { color: var(--code-string); }
+.hljs-number, .hljs-meta { color: var(--code-number); }
+.hljs-comment, .hljs-quote, .hljs-deletion { color: var(--text-tertiary); font-style: italic; }
+.hljs-title, .hljs-name, .hljs-built_in, .hljs-tag { color: var(--code-attr); }
+.hljs-function, .hljs-title.function_ { color: var(--text-primary); font-weight: 700; }
+
+/* Version history modal */
+.version-list { max-height: 320px; overflow-y: auto; margin-bottom: var(--space-4); }
+.version-row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-3) 0; border-top: 1px solid var(--border);
+}
+.version-row:first-child { border-top: none; }
+.version-row-main { min-width: 0; flex: 1; }
+.version-row-time { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+.version-row-preview { font-size: 12px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
 
 /* ============================================================
    TRASH TAB
@@ -762,6 +790,7 @@ input::placeholder { color: var(--text-tertiary); }
 <div class="toast-container" id="toast-container" aria-live="polite"></div>
 <div id="modal-root"></div>
 <input type="file" id="import-file-input" accept="application/json" style="display:none;">
+<input type="file" id="editor-image-input" accept="image/*" style="display:none;">
 
 <script>
 (function () {
@@ -772,11 +801,11 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.5.0';
+var APP_VERSION = '1.6.0';
 var CHANGELOG = [
+  { version: '1.6.0', date: 'Aug 2026', note: 'Added images, syntax-highlighted code, word count, version history, and per-note Markdown export.' },
   { version: '1.5.0', date: 'Aug 2026', note: 'Fixed the mobile favicon, biometric unlock now prompts automatically, and auto-lock goes up to 60 minutes.' },
-  { version: '1.4.1', date: 'Aug 2026', note: 'Removed the duplicate heading shown on the Trash and Settings tabs.' },
-  { version: '1.4.0', date: 'Aug 2026', note: 'Added folders, sort, multi-select, checklists/headings/code blocks, a command palette, and optional biometric unlock.' }
+  { version: '1.4.1', date: 'Aug 2026', note: 'Removed the duplicate heading shown on the Trash and Settings tabs.' }
 ];
 var TAG_COLORS = [
   { id: 'amber', label: 'Amber' },
@@ -2150,10 +2179,74 @@ function selectNote(id) {
   flushPendingSave(false);
   if (id !== selectedNoteId) cleanupIfBlank(selectedNoteId ? findNote(selectedNoteId) : null);
   selectedNoteId = id;
+  maybeSnapshotVersion(findNote(id));
   mobileShowEditor = true;
   $('.notes-panel').classList.add('mobile-show-editor');
   renderNotesList();
   renderEditor();
+}
+
+/* Version history: a lightweight per-note snapshot, capped at 15, taken at most
+   once every 10 minutes and only when content has actually changed since the
+   last one — not on every autosave, which would balloon storage fast. Stored
+   inside the note's own encrypted payload, so it rides along with existing
+   note encryption rather than needing new storage plumbing. */
+var VERSION_HISTORY_LIMIT = 15;
+var VERSION_SNAPSHOT_INTERVAL_MS = 10 * 60 * 1000;
+function maybeSnapshotVersion(note) {
+  if (!note || isNoteBlank(note)) return;
+  if (!note.versions) note.versions = [];
+  var last = note.versions[0];
+  if (last && (Date.now() - last.ts) < VERSION_SNAPSHOT_INTERVAL_MS) return;
+  if (last && last.title === note.title && last.body === note.body) return;
+  note.versions.unshift({ ts: Date.now(), title: note.title, body: note.body, tags: (note.tags || []).slice() });
+  if (note.versions.length > VERSION_HISTORY_LIMIT) note.versions.length = VERSION_HISTORY_LIMIT;
+}
+function showVersionHistoryModal(note) {
+  var root = $('#modal-root');
+  var versions = note.versions || [];
+  var itemsHtml = versions.length === 0
+    ? '<p class="modal-message">No earlier versions yet. A version is saved periodically as you edit.</p>'
+    : versions.map(function (v, i) {
+        var preview = escapeHtml((v.title && v.title.trim()) || stripHtml(v.body).slice(0, 60) || 'Untitled note');
+        return '<div class="version-row">' +
+          '<div class="version-row-main"><div class="version-row-time">' + formatDateTime(v.ts) + '</div><div class="version-row-preview">' + preview + '</div></div>' +
+          '<button class="btn btn-ghost" data-restore-version="' + i + '">Restore</button>' +
+        '</div>';
+      }).join('');
+  root.innerHTML =
+    '<div class="modal-backdrop" id="version-backdrop">' +
+      '<div class="modal" role="dialog" aria-modal="true" style="max-width:460px;">' +
+        '<h3 class="modal-title">Version History</h3>' +
+        '<div class="version-list">' + itemsHtml + '</div>' +
+        '<div class="modal-actions"><button class="btn btn-ghost" id="version-close-btn">Close</button></div>' +
+      '</div>' +
+    '</div>';
+  icons();
+  function close() { root.innerHTML = ''; }
+  on($('#version-close-btn'), 'click', close);
+  on($('#version-backdrop'), 'click', function (e) { if (e.target.id === 'version-backdrop') close(); });
+  $all('[data-restore-version]', root).forEach(function (btn) {
+    on(btn, 'click', function () {
+      var v = versions[parseInt(btn.getAttribute('data-restore-version'), 10)];
+      if (!v) return;
+      showConfirm({
+        title: 'Restore this version?',
+        message: 'Your current content will be saved as a version too, so you can always come back to it.',
+        confirmLabel: 'Restore', danger: false,
+        onConfirm: function () {
+          if (!note.versions) note.versions = [];
+          note.versions.unshift({ ts: Date.now(), title: note.title, body: note.body, tags: (note.tags || []).slice() });
+          note.title = v.title; note.body = v.body; note.tags = (v.tags || []).slice();
+          if (note.versions.length > VERSION_HISTORY_LIMIT) note.versions.length = VERSION_HISTORY_LIMIT;
+          persistNoteImmediate(note);
+          renderEditor();
+          renderNotesList();
+          showToast('Version restored', 'success');
+        }
+      });
+    });
+  });
 }
 
 function findNote(id) {
@@ -2278,7 +2371,10 @@ function renderEditor() {
         '<button class="toolbar-btn" data-cmd="insertOrderedList" aria-label="Numbered list"><i data-lucide="list-ordered"></i></button>' +
         '<button class="toolbar-btn" id="editor-checklist-btn" aria-label="Checklist"><i data-lucide="list-todo"></i></button>' +
         '<button class="toolbar-btn" id="editor-codeblock-btn" aria-label="Code block"><i data-lucide="code"></i></button>' +
+        '<button class="toolbar-btn" id="editor-image-btn" aria-label="Insert image"><i data-lucide="image-plus"></i></button>' +
         '<div class="toolbar-spacer"></div>' +
+        '<button class="toolbar-btn" id="editor-history-btn" aria-label="Version history"><i data-lucide="history"></i></button>' +
+        '<button class="toolbar-btn" id="editor-export-md-btn" aria-label="Export as Markdown"><i data-lucide="file-down"></i></button>' +
         '<button class="toolbar-btn' + (note.pinned ? ' active-state' : '') + '" id="editor-pin-btn" aria-label="Pin note"><i data-lucide="pin"></i></button>' +
         '<button class="toolbar-btn" id="editor-dup-btn" aria-label="Duplicate note"><i data-lucide="copy"></i></button>' +
         '<div class="toolbar-sep"></div>' +
@@ -2289,11 +2385,16 @@ function renderEditor() {
         '<div class="editor-tags-row" id="editor-tags-row"></div>' +
         '<div class="editor-body" id="editor-body" contenteditable="true" data-placeholder="Start writing… ( # heading · - list · [] checklist )">' + (note.body || '') + '</div>' +
       '</div>' +
-      '<div class="editor-meta" id="editor-meta">Created ' + formatDateTime(note.createdAt) + ' · Edited ' + formatDateTime(note.modifiedAt) + '</div>' +
+      '<div class="editor-meta" id="editor-meta">' +
+        '<span id="editor-wordcount">' + computeWordCountText(note.body) + '</span>' +
+        '<span id="editor-timestamps">Created ' + formatDateTime(note.createdAt) + ' · Edited ' + formatDateTime(note.modifiedAt) + '</span>' +
+      '</div>' +
     '</div>';
 
   renderEditorTags(note);
   icons();
+  var bodyEl = $('#editor-body');
+  highlightCodeBlocks(bodyEl);
 
   on($('#editor-back-btn'), 'click', function () {
     flushPendingSave(false);
@@ -2303,8 +2404,12 @@ function renderEditor() {
     renderNotesList();
   });
   on($('#editor-title'), 'input', function (e) { note.title = e.target.value; scheduleSave(note); });
-  var bodyEl = $('#editor-body');
-  on(bodyEl, 'input', function () { note.body = bodyEl.innerHTML; scheduleSave(note); });
+  on(bodyEl, 'input', function () {
+    note.body = bodyEl.innerHTML;
+    scheduleSave(note);
+    var wc = $('#editor-wordcount'); if (wc) wc.textContent = computeWordCountText(note.body);
+  });
+  on(bodyEl, 'blur', function () { highlightCodeBlocks(bodyEl); });
   $all('.toolbar-btn[data-cmd]').forEach(function (btn) {
     on(btn, 'mousedown', function (e) {
       e.preventDefault();
@@ -2335,8 +2440,15 @@ function renderEditor() {
     insertCodeBlock();
     note.body = bodyEl.innerHTML;
     scheduleSave(note);
+    highlightCodeBlocks(bodyEl);
     bodyEl.focus();
   });
+  on($('#editor-image-btn'), 'click', function () {
+    pendingImageTarget = { note: note, bodyEl: bodyEl };
+    $('#editor-image-input').click();
+  });
+  on($('#editor-history-btn'), 'click', function () { showVersionHistoryModal(note); });
+  on($('#editor-export-md-btn'), 'click', function () { exportNoteAsMarkdown(note); });
   on(bodyEl, 'click', function (e) {
     if (e.target.classList.contains('checklist-checkbox')) {
       var item = e.target.closest('.checklist-item');
@@ -2365,6 +2477,132 @@ function insertCodeBlock() {
   var sel = window.getSelection();
   var text = sel && sel.toString() ? escapeHtml(sel.toString()) : 'code';
   document.execCommand('insertHTML', false, '<pre class="code-block"><code>' + text + '</code></pre><div><br></div>');
+}
+
+/* Re-highlights code blocks. Only called at safe moments (initial render, blur,
+   right after inserting a fresh block) — never on every keystroke, since hljs
+   rewrites the block's innerHTML and would fight with an active cursor position. */
+function highlightCodeBlocks(container) {
+  if (!window.hljs || !container) return;
+  var blocks = container.querySelectorAll('pre.code-block code');
+  blocks.forEach(function (block) {
+    try {
+      block.removeAttribute('data-highlighted');
+      window.hljs.highlightElement(block);
+    } catch (e) { /* best-effort */ }
+  });
+}
+
+function computeWordCountText(body) {
+  var text = stripHtml(body || '').trim();
+  var words = text ? text.split(/\s+/).length : 0;
+  var chars = text.length;
+  return words + ' word' + (words === 1 ? '' : 's') + ' · ' + chars + ' character' + (chars === 1 ? '' : 's');
+}
+
+/* Image insertion: photos from a phone camera can be 5-10MB+, which would blow
+   past the 5MB single-key limit the window.storage backend needs to stay under
+   (see saveNoteRecord). Every image is resized to a reasonable max dimension and
+   re-encoded as JPEG before being embedded, regardless of source format. */
+var pendingImageTarget = null;
+function insertImageFile(file, note, bodyEl) {
+  if (!file || file.type.indexOf('image/') !== 0) { showToast('Please choose an image file', 'danger'); return; }
+  var reader = new FileReader();
+  reader.onload = function () {
+    var img = new Image();
+    img.onload = function () {
+      var maxDim = 1200;
+      var w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      var approxBytes = Math.round(dataUrl.length * 0.75);
+      if (approxBytes > 900000) {
+        showToast('That image is quite large even after compression — consider resizing it first', 'info');
+      }
+      bodyEl.focus();
+      document.execCommand('insertHTML', false, '<img src="' + dataUrl + '" class="note-image" alt="Image"><div><br></div>');
+      note.body = bodyEl.innerHTML;
+      scheduleSave(note);
+    };
+    img.onerror = function () { showToast('Could not read that image', 'danger'); };
+    img.src = reader.result;
+  };
+  reader.onerror = function () { showToast('Could not read that image', 'danger'); };
+  reader.readAsDataURL(file);
+}
+
+/* Markdown export — walks the note's own limited HTML vocabulary (this editor's
+   output only, not arbitrary HTML) rather than using a general converter. */
+function inlineMarkdown(node) {
+  if (node.nodeType === 3) return node.textContent;
+  if (node.nodeType !== 1) return '';
+  var tag = node.tagName.toLowerCase();
+  if (tag === 'img') return '![Image](' + (node.getAttribute('src') || '') + ')';
+  if (tag === 'br') return '\n';
+  if (tag === 'input') return '';
+  var inner = Array.prototype.map.call(node.childNodes, inlineMarkdown).join('');
+  if (tag === 'b' || tag === 'strong') return inner.trim() ? '**' + inner + '**' : inner;
+  if (tag === 'i' || tag === 'em') return inner.trim() ? '*' + inner + '*' : inner;
+  return inner;
+}
+function blockToMarkdown(node) {
+  if (node.nodeType === 3) { var t = node.textContent.trim(); return t || null; }
+  if (node.nodeType !== 1) return null;
+  var tag = node.tagName.toLowerCase();
+  if (tag === 'h2') return '## ' + inlineMarkdown(node).trim();
+  if (tag === 'h3') return '### ' + inlineMarkdown(node).trim();
+  if (tag === 'ul') return Array.prototype.map.call(node.children, function (li) { return '- ' + inlineMarkdown(li).trim(); }).join('\n');
+  if (tag === 'ol') return Array.prototype.map.call(node.children, function (li, i) { return (i + 1) + '. ' + inlineMarkdown(li).trim(); }).join('\n');
+  if (tag === 'pre') return '```\n' + node.textContent.replace(/\n$/, '') + '\n```';
+  if (tag === 'img') return '![Image](' + (node.getAttribute('src') || '') + ')';
+  if (node.classList && node.classList.contains('checklist-item')) {
+    var checkbox = node.querySelector('input[type="checkbox"]');
+    var checked = checkbox && checkbox.checked;
+    return '- [' + (checked ? 'x' : ' ') + '] ' + inlineMarkdown(node).trim();
+  }
+  if (tag === 'div' || tag === 'p') { var text = inlineMarkdown(node).trim(); return text || null; }
+  var fallback = inlineMarkdown(node).trim();
+  return fallback || null;
+}
+function htmlToMarkdown(html) {
+  var container = document.createElement('div');
+  container.innerHTML = html || '';
+  var blocks = [], buffer = [];
+  function flushBuffer() { if (buffer.length) { blocks.push(buffer.join('\n')); buffer = []; } }
+  Array.prototype.forEach.call(container.childNodes, function (node) {
+    if (node.nodeType === 1 && node.classList && node.classList.contains('checklist-item')) {
+      var checkbox = node.querySelector('input[type="checkbox"]');
+      var checked = checkbox && checkbox.checked;
+      buffer.push('- [' + (checked ? 'x' : ' ') + '] ' + inlineMarkdown(node).trim());
+      return;
+    }
+    flushBuffer();
+    var b = blockToMarkdown(node);
+    if (b) blocks.push(b);
+  });
+  flushBuffer();
+  return blocks.join('\n\n').trim();
+}
+function exportNoteAsMarkdown(note) {
+  var md = '';
+  if (note.title && note.title.trim()) md += '# ' + note.title.trim() + '\n\n';
+  md += htmlToMarkdown(note.body);
+  var blob = new Blob([md], { type: 'text/markdown' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var safeName = (note.title && note.title.trim() ? note.title.trim() : 'untitled-note').replace(/[\\/:*?"<>|]/g, '-').slice(0, 80);
+  a.href = url; a.download = safeName + '.md';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Note exported as Markdown', 'success');
 }
 
 /* Markdown-style shortcuts: typing a trigger + space at the very start of a text
@@ -2416,9 +2654,9 @@ function flushPendingSave(sync) {
     var note = pendingNote;
     pendingNote = null;
     persistNoteImmediate(note);
-    var metaEl = $('#editor-meta');
-    if (metaEl && note.id === selectedNoteId) {
-      metaEl.textContent = 'Created ' + formatDateTime(note.createdAt) + ' · Edited ' + formatDateTime(note.modifiedAt);
+    var timestampsEl = $('#editor-timestamps');
+    if (timestampsEl && note.id === selectedNoteId) {
+      timestampsEl.textContent = 'Created ' + formatDateTime(note.createdAt) + ' · Edited ' + formatDateTime(note.modifiedAt);
     }
     renderNotesList();
   }
@@ -3115,6 +3353,12 @@ function bindGlobalEvents() {
   on($('#settings-btn'), 'click', function () { switchTab('settings'); });
   on($('#theme-toggle-btn'), 'click', cycleTheme);
   on($('#lock-btn'), 'click', function () { lockVault('manual'); });
+  on($('#editor-image-input'), 'change', function (e) {
+    var file = e.target.files[0];
+    if (file && pendingImageTarget) insertImageFile(file, pendingImageTarget.note, pendingImageTarget.bodyEl);
+    pendingImageTarget = null;
+    e.target.value = '';
+  });
 
   on(document, 'keydown', function (e) {
     if (e.key === 'Escape') {
