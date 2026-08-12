@@ -19,6 +19,14 @@
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; }
+/* Smooths every background/border/text-color change app-wide — most visibly when
+   switching Light/Dark/AMOLED or the AMOLED accent, where surfaces would otherwise
+   snap instantly while only body's own transition (below) crossfaded. Elements with
+   their own transition list (buttons, popovers, etc.) keep their specific one, since
+   a more specific selector's transition shorthand takes precedence over this. */
+*, *::before, *::after {
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -258,6 +266,11 @@ input::placeholder { color: var(--text-tertiary); }
   border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); margin-bottom: var(--space-4);
 }
 .lock-warning svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: var(--danger); }
+.btn-spinner {
+  display: inline-block; width: 13px; height: 13px; border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: btnSpin 0.7s linear infinite; vertical-align: -2px; margin-right: 6px; opacity: 0.85;
+}
+@keyframes btnSpin { to { transform: rotate(360deg); } }
 .lock-error {
   min-height: 18px; font-size: 13px; color: var(--danger); font-weight: 500; margin-top: var(--space-3);
 }
@@ -286,8 +299,12 @@ input::placeholder { color: var(--text-tertiary); }
 .sidebar.collapsed { width: var(--sidebar-w-collapsed); }
 .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) var(--space-2) var(--space-5); gap: var(--space-2); }
 .sidebar.collapsed .sidebar-header { justify-content: center; }
-.wordmark-group { display: flex; align-items: center; gap: var(--space-2); overflow: hidden; }
-.sidebar.collapsed .wordmark-group { display: none; }
+.wordmark-group {
+  display: flex; align-items: center; gap: var(--space-2); overflow: hidden;
+  max-width: 200px; opacity: 1;
+  transition: opacity var(--dur-base) var(--ease), max-width var(--dur-base) var(--ease);
+}
+.sidebar.collapsed .wordmark-group { opacity: 0; max-width: 0; pointer-events: none; }
 .brand-mark {
   position: relative; overflow: hidden; flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px;
   background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm);
@@ -307,7 +324,11 @@ input::placeholder { color: var(--text-tertiary); }
 .nav-icon-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
 .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 .sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
-.sidebar.collapsed .nav-label { display: none; }
+.nav-label {
+  white-space: nowrap; overflow: hidden; max-width: 120px; opacity: 1;
+  transition: opacity var(--dur-base) var(--ease), max-width var(--dur-base) var(--ease);
+}
+.sidebar.collapsed .nav-label { opacity: 0; max-width: 0; }
 .nav-badge {
   position: absolute; top: -7px; right: -9px; display: inline-flex; align-items: center; justify-content: center;
   min-width: 16px; height: 16px; padding: 0 4px; font-size: 10.5px; font-weight: 700; line-height: 1;
@@ -321,7 +342,10 @@ input::placeholder { color: var(--text-tertiary); }
 .sidebar.collapsed .sidebar-footer { flex-direction: column; }
 .fold-btn svg { transition: transform var(--dur-base) var(--ease); }
 .sidebar.collapsed .fold-btn svg { transform: rotate(180deg); }
-.sidebar-backdrop { display: none; }
+.sidebar-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 55;
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease);
+}
 
 .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
 .content-header {
@@ -331,7 +355,7 @@ input::placeholder { color: var(--text-tertiary); }
 .header-title { font-family: var(--font-display); font-size: 21px; font-weight: 550; letter-spacing: -0.01em; }
 .header-left { display: flex; align-items: center; gap: var(--space-3); }
 .menu-btn { display: none; }
-.tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: fadeIn var(--dur-base) var(--ease); }
 .tab-panel[hidden] { display: none; }
 
 /* ============================================================
@@ -390,8 +414,11 @@ input::placeholder { color: var(--text-tertiary); }
   position: absolute; top: calc(100% + 4px); left: var(--space-4); z-index: 30; min-width: 200px; max-width: 260px;
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
   padding: var(--space-2); max-height: 320px; overflow-y: auto;
+  animation: popoverIn var(--dur-fast) var(--ease-strong);
+  transform-origin: top left;
 }
-.dropdown-popover-right { left: auto; right: var(--space-4); }
+.dropdown-popover-right { left: auto; right: var(--space-4); transform-origin: top right; }
+@keyframes popoverIn { from { opacity: 0; transform: scale(0.96) translateY(-4px); } to { opacity: 1; transform: none; } }
 .dropdown-item {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); width: 100%; text-align: left;
   background: transparent; border: none; color: var(--text-primary); font-size: 13px; font-weight: 500;
@@ -414,7 +441,9 @@ input::placeholder { color: var(--text-tertiary); }
 .bulk-action-bar {
   display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4);
   background: var(--surface-2); border-bottom: 1px solid var(--border);
+  animation: bulkBarIn var(--dur-base) var(--ease-strong);
 }
+@keyframes bulkBarIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .bulk-count { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 .bulk-actions { display: flex; gap: 4px; }
 
@@ -426,7 +455,8 @@ input::placeholder { color: var(--text-tertiary); }
 .editor-empty-state svg, .empty-state svg { width: 34px; height: 34px; opacity: 0.5; }
 .editor-empty-state p, .empty-state p { font-size: 14px; max-width: 280px; line-height: 1.5; }
 
-.editor { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.editor { flex: 1; display: flex; flex-direction: column; min-height: 0; animation: editorIn var(--dur-fast) var(--ease); }
+@keyframes editorIn { from { opacity: 0; } to { opacity: 1; } }
 .editor-toolbar {
   display: flex; align-items: center; gap: 2px; padding: var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
@@ -467,6 +497,8 @@ input::placeholder { color: var(--text-tertiary); }
   position: absolute; top: calc(100% + 8px); left: 0; z-index: 20; width: 240px;
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
   padding: var(--space-3);
+  animation: popoverIn var(--dur-fast) var(--ease-strong);
+  transform-origin: top left;
 }
 .tag-swatches { display: flex; gap: 6px; margin-bottom: var(--space-3); flex-wrap: wrap; }
 .tag-swatch {
@@ -590,6 +622,10 @@ input::placeholder { color: var(--text-tertiary); }
   animation: modalIn var(--dur-base) var(--ease-strong);
 }
 @keyframes modalIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.modal-backdrop.modal-closing, .palette-backdrop.modal-closing { animation: fadeOut var(--dur-fast) var(--ease) forwards; }
+.modal-backdrop.modal-closing .modal, .palette-backdrop.modal-closing .palette { animation: modalOut var(--dur-fast) var(--ease) forwards; }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes modalOut { to { opacity: 0; transform: translateY(6px) scale(0.98); } }
 .modal-title { font-family: var(--font-display); font-size: 18px; font-weight: 550; margin-bottom: var(--space-2); }
 .modal-message { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: var(--space-5); }
 .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
@@ -658,13 +694,11 @@ input::placeholder { color: var(--text-tertiary); }
   .sidebar.mobile-open { transform: translateX(0); }
   .sidebar.collapsed { width: 250px; }
   .sidebar.collapsed .sidebar-header { justify-content: space-between; }
-  .sidebar.collapsed .wordmark-group { display: flex; }
-  .sidebar.collapsed .nav-label { display: inline; }
+  .sidebar.collapsed .wordmark-group { opacity: 1; max-width: 200px; pointer-events: auto; }
+  .sidebar.collapsed .nav-label { opacity: 1; max-width: 120px; }
   .sidebar.collapsed .sidebar-footer { flex-direction: row; }
   .fold-btn { display: none; }
-  .sidebar-backdrop.show {
-    display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 55; animation: fadeIn var(--dur-fast) var(--ease);
-  }
+  .sidebar-backdrop.show { opacity: 1; pointer-events: auto; }
   .notes-panel { position: relative; overflow: hidden; }
   .notes-list-pane { position: absolute; inset: 0; width: 100%; transition: transform var(--dur-base) var(--ease); z-index: 2; background: var(--bg); }
   .editor-pane { position: absolute; inset: 0; width: 100%; transform: translateX(100%); transition: transform var(--dur-base) var(--ease); background: var(--bg); }
@@ -801,11 +835,11 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.6.0';
+var APP_VERSION = '1.6.1';
 var CHANGELOG = [
+  { version: '1.6.1', date: 'Aug 2026', note: 'Smoother animations throughout — theme switching, modals, popovers, sidebar fold, and loading states.' },
   { version: '1.6.0', date: 'Aug 2026', note: 'Added images, syntax-highlighted code, word count, version history, and per-note Markdown export.' },
-  { version: '1.5.0', date: 'Aug 2026', note: 'Fixed the mobile favicon, biometric unlock now prompts automatically, and auto-lock goes up to 60 minutes.' },
-  { version: '1.4.1', date: 'Aug 2026', note: 'Removed the duplicate heading shown on the Trash and Settings tabs.' }
+  { version: '1.5.0', date: 'Aug 2026', note: 'Fixed the mobile favicon, biometric unlock now prompts automatically, and auto-lock goes up to 60 minutes.' }
 ];
 var TAG_COLORS = [
   { id: 'amber', label: 'Amber' },
@@ -1273,6 +1307,11 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
 /* ============================================================
    TOASTS & MODALS
    ============================================================ */
+function setBtnLoading(btn, label) {
+  if (!btn) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span>' + escapeHtml(label);
+}
 function showToast(message, type) {
   var container = $('#toast-container');
   var el = document.createElement('div');
@@ -1285,6 +1324,14 @@ function showToast(message, type) {
     el.classList.add('leaving');
     setTimeout(function () { el.remove(); }, 160);
   }, 3200);
+}
+/* Shared by every modal/palette 'close' — mirrors their entrance animation on the
+   way out instead of the abrupt instant-removal every one of them used before. */
+function closeModalRoot(root) {
+  var backdrop = root.querySelector('.modal-backdrop, .palette-backdrop');
+  if (reducedMotion || !backdrop) { root.innerHTML = ''; return; }
+  backdrop.classList.add('modal-closing');
+  setTimeout(function () { root.innerHTML = ''; }, 150);
 }
 function showConfirm(opts) {
   var root = $('#modal-root');
@@ -1299,7 +1346,7 @@ function showConfirm(opts) {
         '</div>' +
       '</div>' +
     '</div>';
-  function close() { root.innerHTML = ''; }
+  function close() { closeModalRoot(root); }
   on($('#confirm-cancel'), 'click', close);
   on($('#confirm-backdrop'), 'click', function (e) { if (e.target.id === 'confirm-backdrop') close(); });
   on($('#confirm-ok'), 'click', function () { close(); opts.onConfirm && opts.onConfirm(); });
@@ -1340,7 +1387,7 @@ function showCommandPalette() {
 }
 function closeCommandPalette() {
   commandPaletteOpen = false;
-  if ($('#palette-backdrop')) $('#modal-root').innerHTML = '';
+  if ($('#palette-backdrop')) closeModalRoot($('#modal-root'));
 }
 function paletteMatches(query) {
   var q = query.trim().toLowerCase();
@@ -1507,7 +1554,7 @@ async function handleSetupSubmit() {
   if (pw !== confirm) { errEl.textContent = "Passwords don't match."; lockCardShake(); return; }
   errEl.textContent = '';
   var submitBtn = $('#unlock-form button[type="submit"]');
-  submitBtn.disabled = true; submitBtn.textContent = 'Creating vault…';
+  setBtnLoading(submitBtn, 'Creating vault…');
 
   try {
     var saltPassword = crypto.getRandomValues(new Uint8Array(16));
@@ -1541,7 +1588,7 @@ async function handleUnlockSubmit() {
   var pw = $('#pw-unlock').value;
   var errEl = $('#lock-error');
   var submitBtn = $('#unlock-form button[type="submit"]');
-  submitBtn.disabled = true; submitBtn.textContent = 'Unlocking…';
+  setBtnLoading(submitBtn, 'Unlocking…');
   try {
     var config = await getVaultConfig();
     if (!config) throw new Error('no-vault');
@@ -1579,7 +1626,7 @@ async function handleRecoveryUnlockSubmit() {
   var normalized = normalizeRecoveryInput($('#recovery-input').value);
   var errEl = $('#lock-error');
   var submitBtn = $('#unlock-form button[type="submit"]');
-  submitBtn.disabled = true; submitBtn.textContent = 'Unlocking…';
+  setBtnLoading(submitBtn, 'Unlocking…');
   try {
     var config = await getVaultConfig();
     if (!config || !config.recoveryEnabled) throw new Error('no-recovery');
@@ -1617,7 +1664,7 @@ async function handleBiometricUnlockSubmit(silent) {
   var btn = $('#biometric-unlock-btn');
   var errEl = $('#lock-error');
   if (!silent) errEl.textContent = '';
-  if (btn) { btn.disabled = true; btn.textContent = 'Waiting for biometric…'; }
+  setBtnLoading(btn, 'Waiting for biometric…');
   try {
     var config = await getVaultConfig();
     if (!config || !config.biometricEnabled) throw new Error('no-biometric');
@@ -2008,8 +2055,8 @@ function showManageFoldersModal() {
         '</div>' +
       '</div>';
     icons();
-    on($('#folders-close-btn'), 'click', function () { root.innerHTML = ''; });
-    on($('#folders-backdrop'), 'click', function (e) { if (e.target.id === 'folders-backdrop') root.innerHTML = ''; });
+    on($('#folders-close-btn'), 'click', function () { closeModalRoot(root); });
+    on($('#folders-backdrop'), 'click', function (e) { if (e.target.id === 'folders-backdrop') closeModalRoot(root); });
     $all('[data-rename]', root).forEach(function (btn) {
       on(btn, 'click', function () {
         var f = findFolder(btn.getAttribute('data-rename'));
@@ -2058,7 +2105,7 @@ function showPromptModal(opts) {
         '</div>' +
       '</div>' +
     '</div>';
-  function close() { root.innerHTML = ''; }
+  function close() { closeModalRoot(root); }
   on($('#prompt-cancel-btn'), 'click', close);
   on($('#prompt-backdrop'), 'click', function (e) { if (e.target.id === 'prompt-backdrop') close(); });
   on($('#prompt-confirm-btn'), 'click', function () { var v = $('#prompt-input').value; close(); opts.onConfirm && opts.onConfirm(v); });
@@ -2159,7 +2206,7 @@ function showBulkMoveToFolderMenu() {
       '</div>' +
     '</div>';
   icons();
-  function close() { root.innerHTML = ''; }
+  function close() { closeModalRoot(root); }
   on($('#bulk-folder-cancel'), 'click', close);
   on($('#bulk-folder-backdrop'), 'click', function (e) { if (e.target.id === 'bulk-folder-backdrop') close(); });
   $all('[data-move-folder]', root).forEach(function (btn) {
@@ -2223,7 +2270,7 @@ function showVersionHistoryModal(note) {
       '</div>' +
     '</div>';
   icons();
-  function close() { root.innerHTML = ''; }
+  function close() { closeModalRoot(root); }
   on($('#version-close-btn'), 'click', close);
   on($('#version-backdrop'), 'click', function (e) { if (e.target.id === 'version-backdrop') close(); });
   $all('[data-restore-version]', root).forEach(function (btn) {
@@ -3127,7 +3174,7 @@ function renderBiometricBlock() {
 }
 async function handleEnableBiometric() {
   var btn = $('#enable-biometric-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Waiting for biometric…'; }
+  setBtnLoading(btn, 'Waiting for biometric…');
   try {
     var result = await enrollBiometricCredential();
     var kek = await kekFromRawBytes(result.secretBytes);
@@ -3214,7 +3261,7 @@ function showRecoveryKeyModal(key) {
       showToast('Could not copy — please select and copy manually', 'danger');
     }
   });
-  on(doneBtn, 'click', function () { root.innerHTML = ''; });
+  on(doneBtn, 'click', function () { closeModalRoot(root); });
 }
 
 function showEraseAllDataModal() {
@@ -3246,7 +3293,7 @@ function showEraseAllDataModal() {
   }
   on(pwField, 'input', updateBtnState);
   on(textField, 'input', updateBtnState);
-  function close() { root.innerHTML = ''; }
+  function close() { closeModalRoot(root); }
   on($('#erase-cancel-btn'), 'click', close);
   on($('#erase-backdrop'), 'click', function (e) { if (e.target.id === 'erase-backdrop') close(); });
   on(confirmBtn, 'click', async function () {
@@ -3365,7 +3412,7 @@ function bindGlobalEvents() {
       if (commandPaletteOpen) { closeCommandPalette(); return; }
       if (openTagPopoverNoteId) { var n = findNote(openTagPopoverNoteId); openTagPopoverNoteId = null; if (n) renderEditorTags(n); }
       if (openFolderPickerNoteId) { var n2 = findNote(openFolderPickerNoteId); openFolderPickerNoteId = null; if (n2) renderEditorTags(n2); }
-      $('#modal-root').innerHTML = '';
+      closeModalRoot($('#modal-root'));
     }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
