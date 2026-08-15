@@ -535,7 +535,7 @@ input::placeholder { color: var(--text-tertiary); }
 .wiki-link { color: var(--link); font-weight: 650; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--link) 55%, transparent); text-underline-offset: 2px; cursor: pointer; border-radius: 4px; padding: 0 2px; }
 .wiki-link:hover { background: var(--surface-2); text-decoration-color: var(--link); }
 /* Invisible editable pads keep a caret position immediately before/after non-editable wiki-link atoms. */
-.wiki-link-pad { display: inline; white-space: pre; }
+.wiki-link-pad { display: inline-block; width: 1px; min-width: 1px; height: 1em; padding: 0; margin: 0; vertical-align: -0.1em; white-space: pre; color: transparent; background: transparent; border: 0; outline: 0; caret-color: var(--text-primary); -webkit-user-select: text; user-select: text; }
 .linked-notes-panel { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--border); } .linked-notes-panel.is-hidden { display: none; }
 .linked-notes-heading { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: var(--space-3); }
 .linked-notes-heading svg { width: 15px; height: 15px; }
@@ -910,8 +910,9 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.8.6';
+var APP_VERSION = '1.8.7';
 var CHANGELOG = [
+  { version: '1.8.7', date: 'Aug 2026', note: 'Improved mobile editing around [[wiki links]] so the keyboard stays available when typing beside linked notes.' },
   { version: '1.8.6', date: 'Aug 2026', note: 'Improved editing around linked notes so typing and Enter work on both sides of [[wiki links]].' },
   { version: '1.8.5', date: 'Aug 2026', note: 'Made the Show/Hide Linked Notes control respond on the first click/tap.' },
   { version: '1.8.4', date: 'Aug 2026', note: 'Made Linked Notes unlink action respond on the first click/tap.' },
@@ -2507,19 +2508,26 @@ function refreshWikiAutocomplete(bodyEl) {
   renderWikiAutocomplete(bodyEl, ctx);
 }
 
+function makeWikiLinkCaretPad() {
+  var pad = document.createElement('span');
+  pad.className = 'wiki-link-pad';
+  pad.setAttribute('contenteditable', 'true');
+  pad.setAttribute('aria-hidden', 'true');
+  pad.textContent = '\u200B';
+  return pad;
+}
 function ensureWikiLinkCaretPads(container) {
   if (!container) return false;
   var changed = false;
   $all('a.wiki-link', container).forEach(function (a) {
     var prev = a.previousSibling;
-    if (!(prev && prev.nodeType === Node.TEXT_NODE && prev.nodeValue.indexOf('\u200B') !== -1)) {
-      var before = document.createTextNode('\u200B');
-      a.parentNode.insertBefore(before, a);
+    if (!(prev && prev.nodeType === Node.ELEMENT_NODE && prev.classList.contains('wiki-link-pad'))) {
+      a.parentNode.insertBefore(makeWikiLinkCaretPad(), a);
       changed = true;
     }
     var next = a.nextSibling;
-    if (!(next && next.nodeType === Node.TEXT_NODE && next.nodeValue.indexOf('\u200B') !== -1)) {
-      var after = document.createTextNode('\u200B');
+    if (!(next && next.nodeType === Node.ELEMENT_NODE && next.classList.contains('wiki-link-pad'))) {
+      var after = makeWikiLinkCaretPad();
       if (a.nextSibling) a.parentNode.insertBefore(after, a.nextSibling);
       else a.parentNode.appendChild(after);
       changed = true;
@@ -2534,7 +2542,7 @@ function normalizeWikiLinks(container) {
   var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
     acceptNode: function (node) {
       var p = node.parentElement;
-      if (!p || p.closest('pre, code, a.wiki-link, .wiki-unlinked')) return NodeFilter.FILTER_REJECT;
+      if (!p || p.closest('pre, code, a.wiki-link, .wiki-unlinked, .wiki-link-pad')) return NodeFilter.FILTER_REJECT;
       return /\[\[[^\[\]]+\]\]/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
     }
   });
@@ -2612,7 +2620,7 @@ function parseWikiLinks(note) {
   var walker = document.createTreeWalker(d, NodeFilter.SHOW_TEXT, {
     acceptNode: function (node) {
       var p = node.parentElement;
-      if (p && (p.closest('.wiki-unlinked') || p.closest('a.wiki-link') || p.closest('pre, code'))) {
+      if (p && (p.closest('.wiki-unlinked') || p.closest('a.wiki-link') || p.closest('.wiki-link-pad') || p.closest('pre, code'))) {
         return NodeFilter.FILTER_REJECT;
       }
       return /\[\[([^\[\]]+)\]\]/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
