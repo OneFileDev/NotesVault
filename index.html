@@ -364,9 +364,9 @@ input::placeholder { color: var(--text-tertiary); }
 .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
 .content-header {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
-  padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--border); flex-shrink: 0; min-height: 68px;
+  padding: 0; border-bottom: none; flex-shrink: 0; min-height: 0; height: 0; overflow: hidden;
 }
-.header-title { font-family: var(--font-display); font-size: 21px; font-weight: 550; letter-spacing: -0.01em; }
+.header-title { font-family: var(--font-display); font-size: 18px; font-weight: 550; letter-spacing: -0.01em; }
 .header-left { display: flex; align-items: center; gap: var(--space-3); }
 .menu-btn { display: none; }
 .tab-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: fadeIn var(--dur-base) var(--ease); }
@@ -481,6 +481,7 @@ input::placeholder { color: var(--text-tertiary); }
 }
 .toolbar-btn:hover { background: var(--surface-2); color: var(--text-primary); }
 .toolbar-btn.active-state { background: var(--surface-2); border-color: var(--border); color: var(--text-primary); }
+.toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 .toolbar-btn svg { width: 16px; height: 16px; }
 .toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 var(--space-2); }
 .toolbar-spacer { flex: 1; }
@@ -520,8 +521,8 @@ input::placeholder { color: var(--text-tertiary); }
 }
 .tag-swatch.selected { border-color: var(--text-primary); }
 .tag-popover-row { display: flex; gap: 6px; }
-.tag-popover-row input { flex: 1; padding: 8px 10px; font-size: 13px; }
-.tag-popover-row button { flex-shrink: 0; }
+.tag-popover-row input { flex: 1 1 auto; min-width: 0; padding: 8px 10px; font-size: 13px; }
+.tag-popover-row button { flex: 0 0 auto; min-width: 54px; padding: 8px 10px !important; }
 
 .editor-body {
   min-height: 240px; font-size: 15px; line-height: 1.75; color: var(--text-primary); outline: none;
@@ -531,6 +532,22 @@ input::placeholder { color: var(--text-tertiary); }
 .editor-body b, .editor-body strong { font-weight: 700; }
 .editor-body h2 { font-size: 20px; font-weight: 700; margin: 0.9em 0 0.35em; letter-spacing: -0.01em; line-height: 1.3; }
 .editor-body h3 { font-size: 17px; font-weight: 700; margin: 0.8em 0 0.3em; letter-spacing: -0.01em; line-height: 1.3; }
+.wiki-link { color: var(--accent); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 2px; cursor: pointer; border-radius: 4px; padding: 0 2px; }
+.wiki-link:hover { background: var(--surface-2); text-decoration-color: var(--accent); }
+.linked-notes-panel { margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--border); } .linked-notes-panel.is-hidden { display: none; }
+.linked-notes-heading { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: var(--space-3); }
+.linked-notes-heading svg { width: 15px; height: 15px; }
+.linked-notes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.linked-notes-group { min-width: 0; }
+.linked-notes-group-title { font-size: 12px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-2); }
+.linked-note-list { display: flex; flex-direction: column; gap: 4px; }
+.linked-note-btn, .linked-missing-btn { width: 100%; display: flex; align-items: center; gap: var(--space-2); padding: 8px 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-primary); border-radius: var(--radius-md); cursor: pointer; text-align: left; font-size: 13px; }
+.linked-note-btn:hover, .linked-missing-btn:hover { border-color: var(--border-strong); background: var(--surface); }
+.linked-note-btn svg, .linked-missing-btn svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--text-tertiary); }
+.linked-missing-btn { border-style: dashed; color: var(--text-secondary); }
+.linked-missing-btn svg { color: var(--accent); }
+.linked-notes-empty { font-size: 12.5px; color: var(--text-tertiary); line-height: 1.5; padding: 8px 0; }
+@media (max-width: 700px) { .linked-notes-grid { grid-template-columns: 1fr; } }
 .checklist-item { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; }
 .checklist-checkbox { margin-top: 5px; width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
 .checklist-item.checked { color: var(--text-tertiary); text-decoration: line-through; }
@@ -540,6 +557,15 @@ input::placeholder { color: var(--text-tertiary); }
 }
 .code-block code { font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; white-space: pre; }
 .note-image { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); margin: 0.6em 0; display: block; box-shadow: var(--shadow-sm); }
+.note-image.is-selected { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.image-resize-popover { position: fixed; z-index: 80; display: flex; align-items: center; gap: 6px; padding: 7px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); }
+.image-resize-popover[hidden] { display: none; }
+.image-resize-label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 0 4px; }
+.image-resize-btn { min-width: 34px; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer; }
+.image-resize-btn:hover { background: var(--surface); color: var(--text-primary); border-color: var(--border-strong); }
+.image-resize-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--border-strong); }
+.image-resize-btn.reset { min-width: 48px; }
+@media (max-width: 700px) { .image-resize-popover { max-width: calc(100vw - 24px); overflow-x: auto; } }
 .editor-meta { padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-tertiary); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
 
 /* Syntax highlighting — muted, theme-adaptive token colors rather than an off-the-shelf
@@ -723,7 +749,9 @@ input::placeholder { color: var(--text-tertiary); }
   .notes-panel.mobile-show-editor .notes-list-pane { transform: translateX(-100%); }
   .notes-panel.mobile-show-editor .editor-pane { transform: translateX(0); }
   .editor-back-btn { display: flex !important; }
-  .content-header { padding: var(--space-3) var(--space-4); }
+  .content-header { height: auto; overflow: visible; padding: 6px var(--space-4); min-height: 40px; border-bottom: 1px solid var(--border); }
+  .content-header .header-left { display: flex; }
+  .content-header .header-actions { display: flex; }
   .settings-content { padding: var(--space-4) var(--space-4) var(--space-8); }
   .trash-body { padding-bottom: var(--space-7); }
   .editor-scroll { padding-bottom: var(--space-7); }
@@ -843,6 +871,7 @@ input::placeholder { color: var(--text-tertiary); }
 <div id="modal-root"></div>
 <input type="file" id="import-file-input" accept="application/json" style="display:none;">
 <input type="file" id="editor-image-input" accept="image/*" style="display:none;">
+<div class="image-resize-popover" id="image-resize-popover" hidden role="toolbar" aria-label="Image size controls"></div>
 
 <script>
 (function () {
@@ -853,8 +882,14 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.6.6';
+var APP_VERSION = '1.7.5';
 var CHANGELOG = [
+  { version: '1.7.5', date: 'Aug 2026', note: 'Added a Cancel option when generating a recovery key; cancelling now leaves the vault unchanged.' },
+  { version: '1.7.4', date: 'Aug 2026', note: 'Fixed the Add tag popover layout and added responsive image resizing controls inside notes.' },
+  { version: '1.7.3', date: 'Aug 2026', note: 'Removed the desktop content header for more editor space and made Linked Notes hidden by default.' },
+  { version: '1.7.2', date: 'Aug 2026', note: 'Shrank the main content header to give the editor more vertical writing space.' },
+  { version: '1.7.1', date: 'Aug 2026', note: 'Added a show/hide control for the Linked Notes panel to give the editor more writing space.' },
+  { version: '1.7.0', date: 'Aug 2026', note: 'Added Linked Notes with [[wiki links]], automatic backlinks, and unresolved-link creation.' },
   { version: '1.6.6', date: 'Aug 2026', note: 'Settings panel now scales with wide screens instead of staying a fixed narrow width.' },
   { version: '1.6.5', date: 'Aug 2026', note: 'Fixed the Notes/Trash icons snapping to center instead of animating smoothly when folding.' },
   { version: '1.6.4', date: 'Aug 2026', note: 'Reduced reflow jank in Notes/Settings content when folding the sidebar.' }
@@ -1208,6 +1243,7 @@ var selectedNoteIds = [];        // ids checked in multi-select mode
 var activeTagFilters = [];       // tag labels currently filtering the notes list
 var biometricAvailable = false;  // does the current vault have biometric unlock enabled?
 var commandPaletteOpen = false;
+var linkedNotesVisible = localStorage.getItem('nv_linked_notes_visible') === '1';
 var ACTIVITY_LOG_LIMIT = 50;
 
 var prefs = {
@@ -2251,6 +2287,192 @@ function selectNote(id) {
   renderEditor();
 }
 
+/* ============================================================
+   LINKED NOTES — [[Wiki Links]] + Backlinks
+   ============================================================ */
+function normalizeWikiLinks(container) {
+  if (!container) return false;
+  var changed = false;
+  var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+    acceptNode: function (node) {
+      var p = node.parentElement;
+      if (!p || p.closest('pre, code, a.wiki-link')) return NodeFilter.FILTER_REJECT;
+      return /\[\[[^\[\]]+\]\]/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  var nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(function (node) {
+    var text = node.nodeValue;
+    var frag = document.createDocumentFragment();
+    var last = 0;
+    var re = /\[\[([^\[\]]+)\]\]/g;
+    var match;
+    while ((match = re.exec(text))) {
+      if (match.index > last) frag.appendChild(document.createTextNode(text.slice(last, match.index)));
+      var title = match[1].trim();
+      var target = findNoteByTitle(title);
+      if (target && !target.deleted && target.id !== (selectedNoteId || '')) {
+        var a = document.createElement('a');
+        a.className = 'wiki-link';
+        a.href = '#';
+        a.setAttribute('contenteditable', 'false');
+        a.setAttribute('data-note-id', target.id);
+        a.textContent = '[[' + (target.title || title) + ']]';
+        frag.appendChild(a);
+        changed = true;
+      } else {
+        frag.appendChild(document.createTextNode(match[0]));
+      }
+      last = re.lastIndex;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    node.parentNode.replaceChild(frag, node);
+  });
+
+  // Refresh the visible label of previously-resolved links after a target note rename.
+  $all('a.wiki-link', container).forEach(function (a) {
+    var target = findNote(a.getAttribute('data-note-id'));
+    if (!target || target.deleted) return;
+    var nextLabel = '[[' + (target.title || 'Untitled note') + ']]';
+    if (a.textContent !== nextLabel) { a.textContent = nextLabel; changed = true; }
+  });
+  return changed;
+}
+function findNoteByTitle(title) {
+  var q = (title || '').trim().toLowerCase();
+  if (!q) return null;
+  for (var i = 0; i < notes.length; i++) {
+    var n = notes[i];
+    if (n.deleted) continue;
+    if ((n.title || '').trim().toLowerCase() === q) return n;
+  }
+  return null;
+}
+function parseWikiLinks(note) {
+  var results = [];
+  var seen = {};
+  var html = note && note.body ? note.body : '';
+  var d = document.createElement('div');
+  d.innerHTML = html;
+
+  $all('a.wiki-link[data-note-id]', d).forEach(function (a) {
+    var id = a.getAttribute('data-note-id');
+    var target = findNote(id);
+    if (id && target && !target.deleted && !seen[id]) {
+      seen[id] = true;
+      results.push({ id: id, title: target.title || 'Untitled note', missing: false });
+    }
+  });
+
+  var plain = d.textContent || '';
+  var re = /\[\[([^\[\]]+)\]\]/g, match;
+  while ((match = re.exec(plain))) {
+    var title = match[1].trim();
+    var target2 = findNoteByTitle(title);
+    if (target2 && !target2.deleted && !seen[target2.id]) {
+      seen[target2.id] = true;
+      results.push({ id: target2.id, title: target2.title || title, missing: false });
+    } else if (title && !results.some(function (r) { return r.missing && r.title.toLowerCase() === title.toLowerCase(); })) {
+      results.push({ id: null, title: title, missing: true });
+    }
+  }
+  return results;
+}
+function getBacklinks(note) {
+  if (!note || note.deleted || !note.title) return [];
+  var out = [];
+  notes.forEach(function (candidate) {
+    if (candidate.deleted || candidate.id === note.id) return;
+    var links = parseWikiLinks(candidate);
+    if (links.some(function (l) { return l.id === note.id; })) out.push(candidate);
+  });
+  out.sort(function (a, b) { return (b.modifiedAt || 0) - (a.modifiedAt || 0); });
+  return out;
+}
+function createNoteFromWikiTitle(title) {
+  var clean = (title || '').trim();
+  if (!clean) return;
+  var existing = findNoteByTitle(clean);
+  if (existing) { selectNote(existing.id); return; }
+  flushPendingSave(false);
+  var now = Date.now();
+  var note = { id: uuid(), title: clean, body: '', tags: [], folderId: null, pinned: false, deleted: false, deletedAt: null, createdAt: now, modifiedAt: now };
+  notes.unshift(note);
+  selectedNoteId = note.id;
+  mobileShowEditor = true;
+  $('.notes-panel').classList.add('mobile-show-editor');
+  persistNoteImmediate(note);
+  renderNotesList();
+  renderEditor();
+  showToast('Note created: ' + clean, 'success');
+}
+function updateLinkedNotesToggle() {
+  var btn = $('#editor-linked-notes-btn');
+  if (!btn) return;
+  btn.setAttribute('aria-pressed', linkedNotesVisible ? 'true' : 'false');
+  btn.setAttribute('aria-label', linkedNotesVisible ? 'Hide linked notes' : 'Show linked notes');
+  btn.setAttribute('title', linkedNotesVisible ? 'Hide linked notes' : 'Show linked notes');
+  btn.innerHTML = '<i data-lucide="' + (linkedNotesVisible ? 'panel-bottom-close' : 'panel-bottom-open') + '"></i>';
+  icons();
+}
+function toggleLinkedNotes() {
+  linkedNotesVisible = !linkedNotesVisible;
+  localStorage.setItem('nv_linked_notes_visible', linkedNotesVisible ? '1' : '0');
+  var panel = $('#linked-notes-panel');
+  if (panel) panel.classList.toggle('is-hidden', !linkedNotesVisible);
+  updateLinkedNotesToggle();
+}
+
+function renderLinkedNotes(note, bodyEl) {
+  var panel = $('#linked-notes-panel');
+  if (!panel || !note) return;
+  if (bodyEl) {
+    var changed = normalizeWikiLinks(bodyEl);
+    if (changed) {
+      note.body = bodyEl.innerHTML;
+      scheduleSave(note);
+    }
+  }
+  var links = parseWikiLinks(note);
+  var backlinks = getBacklinks(note);
+  var resolved = links.filter(function (l) { return !l.missing; });
+  var missing = links.filter(function (l) { return l.missing; });
+
+  var linkHtml = resolved.length
+    ? resolved.map(function (l) {
+        return '<button class="linked-note-btn" data-linked-note-id="' + l.id + '"><i data-lucide="arrow-up-right"></i><span>' + escapeHtml(l.title) + '</span></button>';
+      }).join('')
+    : '<div class="linked-notes-empty">No linked notes yet. Type <strong>[[Note Name]]</strong> in the editor.</div>';
+
+  if (missing.length) {
+    linkHtml += missing.map(function (l) {
+      return '<button class="linked-missing-btn" data-create-wiki="' + escapeHtml(l.title) + '"><i data-lucide="plus"></i><span>Create “' + escapeHtml(l.title) + '”</span></button>';
+    }).join('');
+  }
+
+  var backlinkHtml = backlinks.length
+    ? backlinks.map(function (n) {
+        return '<button class="linked-note-btn" data-linked-note-id="' + n.id + '"><i data-lucide="corner-left-up"></i><span>' + escapeHtml(n.title || 'Untitled note') + '</span></button>';
+      }).join('')
+    : '<div class="linked-notes-empty">Nothing links back to this note yet.</div>';
+
+  panel.classList.toggle('is-hidden', !linkedNotesVisible);
+  panel.innerHTML =
+    '<div class="linked-notes-heading"><i data-lucide="link-2"></i><span>Linked Notes</span></div>' +
+    '<div class="linked-notes-grid">' +
+      '<div class="linked-notes-group"><div class="linked-notes-group-title">Links</div><div class="linked-note-list">' + linkHtml + '</div></div>' +
+      '<div class="linked-notes-group"><div class="linked-notes-group-title">Backlinks</div><div class="linked-note-list">' + backlinkHtml + '</div></div>' +
+    '</div>';
+  icons();
+  $all('[data-linked-note-id]', panel).forEach(function (btn) {
+    on(btn, 'click', function () { selectNote(btn.getAttribute('data-linked-note-id')); });
+  });
+  $all('[data-create-wiki]', panel).forEach(function (btn) {
+    on(btn, 'click', function () { createNoteFromWikiTitle(btn.getAttribute('data-create-wiki')); });
+  });
+}
+
 /* Version history: a lightweight per-note snapshot, capped at 15, taken at most
    once every 10 minutes and only when content has actually changed since the
    last one — not on every autosave, which would balloon storage fast. Stored
@@ -2406,6 +2628,7 @@ function deleteNote(id) {
    EDITOR
    ============================================================ */
 function renderEditor() {
+  closeImageResizePopover(true);
   var pane = $('#editor-pane');
   var note = selectedNoteId ? findNote(selectedNoteId) : null;
 
@@ -2437,7 +2660,9 @@ function renderEditor() {
         '<button class="toolbar-btn" id="editor-checklist-btn" aria-label="Checklist"><i data-lucide="list-todo"></i></button>' +
         '<button class="toolbar-btn" id="editor-codeblock-btn" aria-label="Code block"><i data-lucide="code"></i></button>' +
         '<button class="toolbar-btn" id="editor-image-btn" aria-label="Insert image"><i data-lucide="image-plus"></i></button>' +
+        '<button class="toolbar-btn" id="editor-image-resize-btn" aria-label="Resize selected image" title="Resize selected image" disabled><i data-lucide="maximize-2"></i></button>' +
         '<div class="toolbar-spacer"></div>' +
+        '<button class="toolbar-btn" id="editor-linked-notes-btn" aria-label="Hide linked notes" title="Hide linked notes" aria-pressed="true"><i data-lucide="panel-bottom-close"></i></button>' +
         '<button class="toolbar-btn" id="editor-history-btn" aria-label="Version history"><i data-lucide="history"></i></button>' +
         '<button class="toolbar-btn" id="editor-export-md-btn" aria-label="Export as Markdown"><i data-lucide="file-down"></i></button>' +
         '<button class="toolbar-btn' + (note.pinned ? ' active-state' : '') + '" id="editor-pin-btn" aria-label="Pin note"><i data-lucide="pin"></i></button>' +
@@ -2448,7 +2673,8 @@ function renderEditor() {
       '<div class="editor-scroll">' +
         '<input type="text" class="editor-title" id="editor-title" placeholder="Untitled note" value="' + escapeHtml(note.title || '') + '">' +
         '<div class="editor-tags-row" id="editor-tags-row"></div>' +
-        '<div class="editor-body" id="editor-body" contenteditable="true" data-placeholder="Start writing… ( # heading · - list · [] checklist )">' + (note.body || '') + '</div>' +
+        '<div class="editor-body" id="editor-body" data-note-id="' + escapeHtml(note.id) + '" contenteditable="true" data-placeholder="Start writing… ( # heading · - list · [] checklist · [[Note Name]] link )">' + (note.body || '') + '</div>' +
+        '<div class="linked-notes-panel" id="linked-notes-panel"></div>' +
       '</div>' +
       '<div class="editor-meta" id="editor-meta">' +
         '<span id="editor-wordcount">' + computeWordCountText(note.body) + '</span>' +
@@ -2459,7 +2685,12 @@ function renderEditor() {
   renderEditorTags(note);
   icons();
   var bodyEl = $('#editor-body');
+  normalizeWikiLinks(bodyEl);
+  if (bodyEl.innerHTML !== note.body) { note.body = bodyEl.innerHTML; persistNoteImmediate(note); }
   highlightCodeBlocks(bodyEl);
+  renderLinkedNotes(note);
+  updateLinkedNotesToggle();
+  on($('#editor-linked-notes-btn'), 'click', toggleLinkedNotes);
 
   on($('#editor-back-btn'), 'click', function () {
     flushPendingSave(false);
@@ -2474,7 +2705,16 @@ function renderEditor() {
     scheduleSave(note);
     var wc = $('#editor-wordcount'); if (wc) wc.textContent = computeWordCountText(note.body);
   });
-  on(bodyEl, 'blur', function () { highlightCodeBlocks(bodyEl); });
+  on(bodyEl, 'blur', function () {
+    var before = bodyEl.innerHTML;
+    var changed = normalizeWikiLinks(bodyEl);
+    if (changed || before !== bodyEl.innerHTML) {
+      note.body = bodyEl.innerHTML;
+      scheduleSave(note);
+    }
+    highlightCodeBlocks(bodyEl);
+    renderLinkedNotes(note);
+  });
   $all('.toolbar-btn[data-cmd]').forEach(function (btn) {
     on(btn, 'mousedown', function (e) {
       e.preventDefault();
@@ -2512,9 +2752,25 @@ function renderEditor() {
     pendingImageTarget = { note: note, bodyEl: bodyEl };
     $('#editor-image-input').click();
   });
+  on($('#editor-image-resize-btn'), 'click', function () { toggleImageResizePopover(); });
   on($('#editor-history-btn'), 'click', function () { showVersionHistoryModal(note); });
   on($('#editor-export-md-btn'), 'click', function () { exportNoteAsMarkdown(note); });
   on(bodyEl, 'click', function (e) {
+    var clickedImage = e.target && e.target.tagName === 'IMG' && e.target.classList.contains('note-image');
+    if (clickedImage) {
+      e.preventDefault();
+      showImageResizePopover(e.target, bodyEl);
+      return;
+    }
+    if (selectedImageEl && !e.target.closest('.image-resize-popover')) closeImageResizePopover(true);
+    var wiki = e.target.closest && e.target.closest('.wiki-link');
+    if (wiki) {
+      e.preventDefault();
+      e.stopPropagation();
+      var targetId = wiki.getAttribute('data-note-id');
+      if (targetId && findNote(targetId)) selectNote(targetId);
+      return;
+    }
     if (e.target.classList.contains('checklist-checkbox')) {
       var item = e.target.closest('.checklist-item');
       if (item) item.classList.toggle('checked', e.target.checked);
@@ -2570,6 +2826,80 @@ function computeWordCountText(body) {
    (see saveNoteRecord). Every image is resized to a reasonable max dimension and
    re-encoded as JPEG before being embedded, regardless of source format. */
 var pendingImageTarget = null;
+var selectedImageEl = null;
+var selectedImageBodyEl = null;
+
+function getImageResizeMode(img) {
+  if (!img) return 'auto';
+  var width = (img.style && img.style.width) || '';
+  if (!width) return 'auto';
+  var match = width.match(/^(25|50|75|100)%$/);
+  return match ? match[1] : 'custom';
+}
+function updateImageResizeButton() {
+  var btn = $('#editor-image-resize-btn');
+  if (!btn) return;
+  btn.disabled = !selectedImageEl;
+  btn.classList.toggle('active-state', !!selectedImageEl);
+}
+function positionImageResizePopover() {
+  var pop = $('#image-resize-popover');
+  if (!pop || !selectedImageEl) return;
+  var r = selectedImageEl.getBoundingClientRect();
+  var popRect = pop.getBoundingClientRect();
+  var left = Math.min(Math.max(12, r.left), Math.max(12, window.innerWidth - popRect.width - 12));
+  var above = r.top - popRect.height - 8;
+  var top = above >= 12 ? above : Math.min(window.innerHeight - popRect.height - 12, r.bottom + 8);
+  pop.style.left = left + 'px';
+  pop.style.top = Math.max(12, top) + 'px';
+}
+function closeImageResizePopover(clearSelection) {
+  var pop = $('#image-resize-popover');
+  if (pop) { pop.hidden = true; pop.innerHTML = ''; }
+  if (clearSelection && selectedImageEl) selectedImageEl.classList.remove('is-selected');
+  if (clearSelection) { selectedImageEl = null; selectedImageBodyEl = null; }
+  updateImageResizeButton();
+}
+function showImageResizePopover(img, bodyEl) {
+  if (!img) return;
+  if (selectedImageEl && selectedImageEl !== img) selectedImageEl.classList.remove('is-selected');
+  selectedImageEl = img;
+  selectedImageBodyEl = bodyEl || selectedImageBodyEl;
+  img.classList.add('is-selected');
+  var pop = $('#image-resize-popover');
+  if (!pop) return;
+  var mode = getImageResizeMode(img);
+  pop.innerHTML = '<span class="image-resize-label">Size</span>' +
+    ['25','50','75','100'].map(function (v) { return '<button type="button" class="image-resize-btn' + (mode === v ? ' active' : '') + '" data-image-size="' + v + '" aria-label="Set image width to ' + v + ' percent">' + v + '%</button>'; }).join('') +
+    '<button type="button" class="image-resize-btn reset" data-image-size="auto" aria-label="Reset image size">Auto</button>';
+  pop.hidden = false;
+  $all('.image-resize-btn', pop).forEach(function (btn) {
+    on(btn, 'mousedown', function (e) { e.preventDefault(); });
+    on(btn, 'click', function () {
+      if (!selectedImageEl) return;
+      var size = btn.getAttribute('data-image-size');
+      if (size === 'auto') selectedImageEl.style.removeProperty('width');
+      else selectedImageEl.style.width = size + '%';
+      selectedImageEl.style.height = 'auto';
+      var noteId = selectedImageBodyEl && selectedImageBodyEl.getAttribute('data-note-id');
+      var note = noteId ? findNote(noteId) : (selectedNoteId ? findNote(selectedNoteId) : null);
+      if (note && selectedImageBodyEl) {
+        note.body = selectedImageBodyEl.innerHTML;
+        scheduleSave(note);
+      }
+      showImageResizePopover(selectedImageEl, selectedImageBodyEl);
+    });
+  });
+  updateImageResizeButton();
+  requestAnimationFrame(positionImageResizePopover);
+}
+function toggleImageResizePopover() {
+  if (!selectedImageEl) { showToast('Select an image first', 'info'); return; }
+  var pop = $('#image-resize-popover');
+  if (!pop) return;
+  if (pop.hidden) showImageResizePopover(selectedImageEl, selectedImageBodyEl);
+  else closeImageResizePopover(false);
+}
 function insertImageFile(file, note, bodyEl) {
   if (!file || file.type.indexOf('image/') !== 0) { showToast('Please choose an image file', 'danger'); return; }
   var reader = new FileReader();
@@ -3129,21 +3459,32 @@ async function handleChangePassword(e) {
 async function handleGenerateRecoveryKey() {
   var btn = $('#generate-recovery-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-  var recoveryKey = generateRecoveryKey();
-  var normalized = normalizeRecoveryInput(recoveryKey);
-  var saltRecovery = crypto.getRandomValues(new Uint8Array(16));
-  var kek = await deriveKEK(normalized, saltRecovery, PBKDF2_ITERATIONS);
-  var wrapped = await wrapDEK(vaultKey, kek);
-  var config = await getVaultConfig();
-  config.recoveryEnabled = true;
-  config.saltRecovery = bufToB64(saltRecovery);
-  config.wrappedDekRecoveryIv = wrapped.iv;
-  config.wrappedDekRecovery = wrapped.wrapped;
-  await setVaultConfig(config);
-  recoveryAvailable = true;
-  logActivity('recovery-key-generated');
-  renderSettings();
-  showRecoveryKeyModal(recoveryKey);
+  try {
+    var recoveryKey = generateRecoveryKey();
+    var normalized = normalizeRecoveryInput(recoveryKey);
+    var saltRecovery = crypto.getRandomValues(new Uint8Array(16));
+    var kek = await deriveKEK(normalized, saltRecovery, PBKDF2_ITERATIONS);
+    var wrapped = await wrapDEK(vaultKey, kek);
+
+    /* Do not persist anything until the user confirms they saved the key.
+       This makes Cancel a true no-op instead of silently enabling recovery. */
+    showRecoveryKeyModal(recoveryKey, async function () {
+      var config = await getVaultConfig();
+      config.recoveryEnabled = true;
+      config.saltRecovery = bufToB64(saltRecovery);
+      config.wrappedDekRecoveryIv = wrapped.iv;
+      config.wrappedDekRecovery = wrapped.wrapped;
+      await setVaultConfig(config);
+      recoveryAvailable = true;
+      logActivity('recovery-key-generated');
+      renderSettings();
+    }, function () {
+      renderSettings();
+    });
+  } catch (err) {
+    showToast('Could not generate a recovery key', 'danger');
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate Recovery Key'; }
+  }
 }
 
 function handleRevokeRecoveryKey() {
@@ -3255,7 +3596,7 @@ function activityLabel(a) {
   }
 }
 
-function showRecoveryKeyModal(key) {
+function showRecoveryKeyModal(key, onConfirm, onCancel) {
   var root = $('#modal-root');
   root.innerHTML =
     '<div class="modal-backdrop" id="rk-backdrop">' +
@@ -3265,11 +3606,15 @@ function showRecoveryKeyModal(key) {
         '<div class="recovery-key-box" id="recovery-key-box">' + escapeHtml(key) + '</div>' +
         '<button class="btn btn-ghost btn-block" id="rk-copy-btn" style="margin-bottom:var(--space-4);"><i data-lucide="copy"></i>Copy to clipboard</button>' +
         '<label class="rk-confirm-row"><input type="checkbox" id="rk-ack">I\'ve saved my recovery key somewhere safe</label>' +
-        '<button class="btn btn-primary btn-block" id="rk-done-btn" disabled>Done</button>' +
+        '<div style="display:flex;gap:var(--space-3);">' +
+          '<button class="btn btn-ghost" id="rk-cancel-btn" style="flex:1;">Cancel</button>' +
+          '<button class="btn btn-primary" id="rk-done-btn" style="flex:1;" disabled>Done</button>' +
+        '</div>' +
       '</div>' +
     '</div>';
   icons();
-  var ack = $('#rk-ack'), doneBtn = $('#rk-done-btn');
+  var ack = $('#rk-ack'), doneBtn = $('#rk-done-btn'), cancelBtn = $('#rk-cancel-btn');
+  var finished = false;
   on(ack, 'change', function () { doneBtn.disabled = !ack.checked; });
   on($('#rk-copy-btn'), 'click', function () {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -3279,7 +3624,29 @@ function showRecoveryKeyModal(key) {
       showToast('Could not copy — please select and copy manually', 'danger');
     }
   });
-  on(doneBtn, 'click', function () { closeModalRoot(root); });
+  on(cancelBtn, 'click', function () {
+    if (finished) return;
+    finished = true;
+    closeModalRoot(root);
+    if (onCancel) onCancel();
+  });
+  on(doneBtn, 'click', async function () {
+    if (finished || !ack.checked) return;
+    finished = true;
+    doneBtn.disabled = true;
+    cancelBtn.disabled = true;
+    doneBtn.textContent = 'Saving…';
+    try {
+      if (onConfirm) await onConfirm();
+      closeModalRoot(root);
+    } catch (err) {
+      finished = false;
+      doneBtn.disabled = false;
+      cancelBtn.disabled = false;
+      doneBtn.textContent = 'Done';
+      showToast('Could not save the recovery key', 'danger');
+    }
+  });
 }
 
 function showEraseAllDataModal() {
@@ -3440,6 +3807,15 @@ function bindGlobalEvents() {
       if (vaultKey && !commandPaletteOpen) { e.preventDefault(); switchTab('notes'); createNewNote(); }
     }
   });
+
+  on(document, 'click', function (e) {
+    var pop = $('#image-resize-popover');
+    if (!pop || pop.hidden) return;
+    if (e.target.closest && (e.target.closest('#image-resize-popover') || e.target.closest('.note-image') || e.target.closest('#editor-image-resize-btn'))) return;
+    closeImageResizePopover(true);
+  });
+  window.addEventListener('resize', function () { if (!$('#image-resize-popover') || $('#image-resize-popover').hidden) return; positionImageResizePopover(); });
+  window.addEventListener('scroll', function () { if (!$('#image-resize-popover') || $('#image-resize-popover').hidden) return; positionImageResizePopover(); }, true);
 
   window.addEventListener('beforeunload', function () { flushPendingSave(true); });
 }
