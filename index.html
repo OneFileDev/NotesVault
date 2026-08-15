@@ -482,6 +482,7 @@ input::placeholder { color: var(--text-tertiary); }
 .toolbar-btn:hover { background: var(--surface-2); color: var(--text-primary); }
 .toolbar-btn.active-state { background: var(--surface-2); border-color: var(--border); color: var(--text-primary); }
 .toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.editor-history-group { display: inline-flex; align-items: center; gap: 2px; }
 .toolbar-btn svg { width: 16px; height: 16px; }
 .toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 var(--space-2); }
 .toolbar-spacer { flex: 1; }
@@ -911,8 +912,10 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.8.8';
+var APP_VERSION = '1.9.0';
 var CHANGELOG = [
+  { version: '1.9.0', date: 'Aug 2026', note: 'Added reliable editor Undo/Redo history, toolbar controls, and keyboard undo/redo shortcuts.' },
+  { version: '1.8.9', date: 'Aug 2026', note: 'Added editor Undo/Redo controls and per-note editing history.' },
   { version: '1.8.8', date: 'Aug 2026', note: 'Hardened Linked Notes editing across desktop and mobile, fixed caret/keyboard issues, autocomplete insertion, stale links, self-links, and unlink interactions.' },
   { version: '1.8.7', date: 'Aug 2026', note: 'Improved mobile editing around [[wiki links]] so the keyboard stays available when typing beside linked notes.' },
   { version: '1.8.6', date: 'Aug 2026', note: 'Improved editing around linked notes so typing and Enter work on both sides of [[wiki links]].' },
@@ -1286,6 +1289,7 @@ var activeTagFilters = [];       // tag labels currently filtering the notes lis
 var biometricAvailable = false;  // does the current vault have biometric unlock enabled?
 var commandPaletteOpen = false;
 var linkedNotesVisible = localStorage.getItem('nv_linked_notes_visible') === '1';
+var editorHistory = { noteId: null, undo: [], redo: [], lastHTML: null, lastSelection: null, pendingBefore: null, restoring: false, max: 100 };
 var ACTIVITY_LOG_LIMIT = 50;
 
 var prefs = {
@@ -2519,6 +2523,7 @@ function chooseWikiAutocomplete(index) {
   if (!ctx) { closeWikiAutocomplete(); return; }
   ctx = unwrapWikiUnlinkedAtSelection(ctx) || ctx;
 
+  var beforeSelection = getEditorSelectionSnapshot(bodyEl);
   var sel = window.getSelection();
   var range = document.createRange();
   range.setStart(ctx.node, ctx.startOffset);
@@ -2547,6 +2552,7 @@ function chooseWikiAutocomplete(index) {
 
   var note = findNote(bodyEl.getAttribute('data-note-id'));
   if (note) {
+    recordEditorHistoryChange(note, bodyEl, beforeSelection);
     note.body = serializeEditorBody(bodyEl);
     scheduleSave(note);
     renderLinkedNotes(note, bodyEl);
@@ -2818,6 +2824,7 @@ function unlinkWikiNote(note, bodyEl, targetId) {
     changed = true;
   });
   if (changed) {
+    recordEditorHistoryChange(note, bodyEl, getEditorSelectionSnapshot(bodyEl));
     note.body = serializeEditorBody(bodyEl);
     scheduleSave(note);
   }
@@ -3038,6 +3045,167 @@ function deleteNote(id) {
 /* ============================================================
    EDITOR
    ============================================================ */
+function getEditorSelectionSnapshot(bodyEl) {
+  if (!bodyEl) return null;
+  var sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !bodyEl.contains(sel.anchorNode) || !bodyEl.contains(sel.focusNode)) return null;
+  function pathFromRoot(root, node) {
+    var path = [];
+    var cur = node;
+    while (cur && cur !== root) {
+      var parent = cur.parentNode;
+      if (!parent) return null;
+      path.unshift(Array.prototype.indexOf.call(parent.childNodes, cur));
+      cur = parent;
+    }
+    return cur === root ? path : null;
+  }
+  return {
+    anchor: pathFromRoot(bodyEl, sel.anchorNode),
+    anchorOffset: sel.anchorOffset,
+    focus: pathFromRoot(bodyEl, sel.focusNode),
+    focusOffset: sel.focusOffset,
+    direction: (function () {
+      try {
+        return sel.anchorNode === sel.focusNode && sel.anchorOffset <= sel.focusOffset ? 'forward' :
+          (sel.anchorNode && sel.focusNode ? (function(){
+            var r = document.createRange(); r.setStart(sel.anchorNode, sel.anchorOffset); r.setEnd(sel.focusNode, sel.focusOffset);
+            return !r.collapsed ? 'forward' : 'backward';
+          })() : 'forward');
+      } catch (e) { return 'forward'; }
+    })()
+  };
+}
+function nodeFromPath(root, path) {
+  if (!root || !path) return null;
+  var node = root;
+  for (var i = 0; i < path.length; i++) {
+    if (!node || !node.childNodes || !node.childNodes[path[i]]) return null;
+    node = node.childNodes[path[i]];
+  }
+  return node;
+}
+function restoreEditorSelection(bodyEl, snap) {
+  if (!bodyEl || !snap) return false;
+  try {
+    var anchor = nodeFromPath(bodyEl, snap.anchor);
+    var focus = nodeFromPath(bodyEl, snap.focus);
+    if (!anchor || !focus) return false;
+    var ao = Math.min(snap.anchorOffset || 0, anchor.nodeType === Node.TEXT_NODE ? anchor.nodeValue.length : anchor.childNodes.length);
+    var fo = Math.min(snap.focusOffset || 0, focus.nodeType === Node.TEXT_NODE ? focus.nodeValue.length : focus.childNodes.length);
+    var sel = window.getSelection();
+    var range = document.createRange();
+    range.setStart(anchor, ao);
+    range.setEnd(focus, fo);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    return true;
+  } catch (e) { return false; }
+}
+function resetEditorHistory(note, bodyEl, preserveExisting) {
+  var html = serializeEditorBody(bodyEl);
+  if (preserveExisting && editorHistory.noteId === note.id) {
+    editorHistory.lastHTML = html;
+    editorHistory.lastSelection = getEditorSelectionSnapshot(bodyEl);
+    editorHistory.pendingBefore = null;
+    updateEditorHistoryButtons();
+    return;
+  }
+  editorHistory = {
+    noteId: note.id,
+    undo: [],
+    redo: [],
+    lastHTML: html,
+    lastSelection: getEditorSelectionSnapshot(bodyEl),
+    pendingBefore: null,
+    restoring: false,
+    max: 100
+  };
+  updateEditorHistoryButtons();
+}
+function beginEditorHistoryChange(note, bodyEl) {
+  if (!note || !bodyEl || editorHistory.restoring || editorHistory.noteId !== note.id) return;
+  editorHistory.pendingBefore = {
+    html: serializeEditorBody(bodyEl),
+    selection: getEditorSelectionSnapshot(bodyEl)
+  };
+}
+function commitEditorHistoryChange(note, bodyEl, before) {
+  if (!note || !bodyEl || editorHistory.restoring || editorHistory.noteId !== note.id) return;
+  var currentHTML = serializeEditorBody(bodyEl);
+  var previous = before || editorHistory.pendingBefore || {
+    html: editorHistory.lastHTML || '',
+    selection: editorHistory.lastSelection || null
+  };
+  editorHistory.pendingBefore = null;
+  if (currentHTML === previous.html) {
+    editorHistory.lastHTML = currentHTML;
+    editorHistory.lastSelection = getEditorSelectionSnapshot(bodyEl);
+    updateEditorHistoryButtons();
+    return;
+  }
+  editorHistory.undo.push({ html: previous.html, selection: previous.selection });
+  if (editorHistory.undo.length > editorHistory.max) editorHistory.undo.shift();
+  editorHistory.redo = [];
+  editorHistory.lastHTML = currentHTML;
+  editorHistory.lastSelection = getEditorSelectionSnapshot(bodyEl);
+  updateEditorHistoryButtons();
+}
+function recordEditorHistoryChange(note, bodyEl, beforeSelection) {
+  commitEditorHistoryChange(note, bodyEl, beforeSelection ? {
+    html: editorHistory.lastHTML || serializeEditorBody(bodyEl),
+    selection: beforeSelection
+  } : null);
+}
+function updateEditorHistoryButtons() {
+  var u = $('#editor-undo-btn');
+  var r = $('#editor-redo-btn');
+  if (u) {
+    u.disabled = !editorHistory.undo.length;
+    u.setAttribute('aria-disabled', u.disabled ? 'true' : 'false');
+  }
+  if (r) {
+    r.disabled = !editorHistory.redo.length;
+    r.setAttribute('aria-disabled', r.disabled ? 'true' : 'false');
+  }
+}
+function applyEditorHistory(note, bodyEl, direction) {
+  if (!note || !bodyEl || editorHistory.noteId !== note.id) return false;
+  var source = direction === 'undo' ? editorHistory.undo : editorHistory.redo;
+  var target = direction === 'undo' ? editorHistory.redo : editorHistory.undo;
+  if (!source.length) return false;
+  var currentHTML = serializeEditorBody(bodyEl);
+  var currentSelection = getEditorSelectionSnapshot(bodyEl);
+  var entry = source.pop();
+  target.push({ html: currentHTML, selection: currentSelection });
+  editorHistory.pendingBefore = null;
+  editorHistory.restoring = true;
+  try {
+    bodyEl.innerHTML = entry.html || '';
+    normalizeWikiLinks(bodyEl);
+    var restoredHTML = serializeEditorBody(bodyEl);
+    editorHistory.lastHTML = restoredHTML;
+    editorHistory.lastSelection = entry.selection || null;
+    note.body = restoredHTML;
+    scheduleSave(note);
+    renderLinkedNotes(note, bodyEl);
+    highlightCodeBlocks(bodyEl);
+    bodyEl.focus({ preventScroll: true });
+    if (!restoreEditorSelection(bodyEl, entry.selection)) {
+      var sel = window.getSelection();
+      var range = document.createRange();
+      range.selectNodeContents(bodyEl);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  } finally {
+    editorHistory.restoring = false;
+    updateEditorHistoryButtons();
+  }
+  return true;
+}
+
 function renderEditor() {
   closeImageResizePopover(true);
   var pane = $('#editor-pane');
@@ -3062,6 +3230,10 @@ function renderEditor() {
     '<div class="editor">' +
       '<div class="editor-toolbar">' +
         '<button class="btn-icon editor-back-btn" id="editor-back-btn" aria-label="Back to list"><i data-lucide="arrow-left"></i></button>' +
+        '<div class="editor-history-group" role="group" aria-label="Editor history">' +
+        '<button class="toolbar-btn" id="editor-undo-btn" aria-label="Undo" title="Undo (Ctrl/Cmd+Z)" disabled><i data-lucide="undo-2"></i></button>' +
+        '<button class="toolbar-btn" id="editor-redo-btn" aria-label="Redo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled><i data-lucide="redo-2"></i></button>' +
+        '</div>' +
         '<button class="toolbar-btn" data-cmd="bold" aria-label="Bold"><i data-lucide="bold"></i></button>' +
         '<button class="toolbar-btn" data-cmd="italic" aria-label="Italic"><i data-lucide="italic"></i></button>' +
         '<button class="toolbar-btn" data-block="h2" aria-label="Heading"><i data-lucide="heading-2"></i></button>' +
@@ -3098,9 +3270,23 @@ function renderEditor() {
   var bodyEl = $('#editor-body');
   normalizeWikiLinks(bodyEl);
   if (serializeEditorBody(bodyEl) !== note.body) { note.body = serializeEditorBody(bodyEl); persistNoteImmediate(note); }
+  resetEditorHistory(note, bodyEl, true);
   highlightCodeBlocks(bodyEl);
   renderLinkedNotes(note);
   updateLinkedNotesToggle();
+  on($('#editor-undo-btn'), 'mousedown', function (e) { e.preventDefault(); });
+  on($('#editor-redo-btn'), 'mousedown', function (e) { e.preventDefault(); });
+  on($('#editor-undo-btn'), 'click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    applyEditorHistory(note, bodyEl, 'undo');
+  });
+  on($('#editor-redo-btn'), 'click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    applyEditorHistory(note, bodyEl, 'redo');
+  });
+
   on($('#editor-linked-notes-btn'), 'click', function (e) {
     e.preventDefault();
     e.stopPropagation();
@@ -3134,10 +3320,15 @@ function renderEditor() {
       }
     }
   });
+  on(bodyEl, 'beforeinput', function () {
+    beginEditorHistoryChange(note, bodyEl);
+  });
   on(bodyEl, 'input', function () {
+    commitEditorHistoryChange(note, bodyEl);
     note.body = serializeEditorBody(bodyEl);
     scheduleSave(note);
     var wc = $('#editor-wordcount'); if (wc) wc.textContent = computeWordCountText(note.body);
+    refreshWikiAutocomplete(bodyEl);
   });
   on(bodyEl, 'blur', function () {
     var before = serializeEditorBody(bodyEl);
@@ -3153,7 +3344,9 @@ function renderEditor() {
   $all('.toolbar-btn[data-cmd]').forEach(function (btn) {
     on(btn, 'mousedown', function (e) {
       e.preventDefault();
+      beginEditorHistoryChange(note, bodyEl);
       document.execCommand(btn.getAttribute('data-cmd'), false, null);
+      commitEditorHistoryChange(note, bodyEl);
       note.body = serializeEditorBody(bodyEl);
       scheduleSave(note);
       bodyEl.focus();
@@ -3162,7 +3355,9 @@ function renderEditor() {
   $all('.toolbar-btn[data-block]').forEach(function (btn) {
     on(btn, 'mousedown', function (e) {
       e.preventDefault();
+      beginEditorHistoryChange(note, bodyEl);
       document.execCommand('formatBlock', false, btn.getAttribute('data-block'));
+      commitEditorHistoryChange(note, bodyEl);
       note.body = serializeEditorBody(bodyEl);
       scheduleSave(note);
       bodyEl.focus();
@@ -3170,14 +3365,18 @@ function renderEditor() {
   });
   on($('#editor-checklist-btn'), 'mousedown', function (e) {
     e.preventDefault();
+    beginEditorHistoryChange(note, bodyEl);
     insertChecklistItem();
+    commitEditorHistoryChange(note, bodyEl);
     note.body = serializeEditorBody(bodyEl);
     scheduleSave(note);
     bodyEl.focus();
   });
   on($('#editor-codeblock-btn'), 'mousedown', function (e) {
     e.preventDefault();
+    beginEditorHistoryChange(note, bodyEl);
     insertCodeBlock();
+    commitEditorHistoryChange(note, bodyEl);
     note.body = serializeEditorBody(bodyEl);
     scheduleSave(note);
     highlightCodeBlocks(bodyEl);
@@ -3216,6 +3415,11 @@ function renderEditor() {
     }
   });
   on(bodyEl, 'keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      if (e.key.toLowerCase() === 'z' && e.shiftKey) { e.preventDefault(); applyEditorHistory(note, bodyEl, 'redo'); return; }
+      if (e.key.toLowerCase() === 'z') { e.preventDefault(); applyEditorHistory(note, bodyEl, 'undo'); return; }
+      if (e.key.toLowerCase() === 'y') { e.preventDefault(); applyEditorHistory(note, bodyEl, 'redo'); return; }
+    }
     if (wikiAutocompleteState.open && wikiAutocompleteState.body === bodyEl) {
       if (e.key === 'ArrowDown') { e.preventDefault(); moveWikiAutocomplete(1); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); moveWikiAutocomplete(-1); return; }
@@ -3335,7 +3539,9 @@ function showImageResizePopover(img, bodyEl) {
       var noteId = selectedImageBodyEl && selectedImageBodyEl.getAttribute('data-note-id');
       var note = noteId ? findNote(noteId) : (selectedNoteId ? findNote(selectedNoteId) : null);
       if (note && selectedImageBodyEl) {
-        note.body = selectedImageBodyEl.innerHTML;
+        var beforeSelection = getEditorSelectionSnapshot(selectedImageBodyEl);
+        recordEditorHistoryChange(note, selectedImageBodyEl, beforeSelection);
+        note.body = serializeEditorBody(selectedImageBodyEl);
         scheduleSave(note);
       }
       showImageResizePopover(selectedImageEl, selectedImageBodyEl);
@@ -3373,8 +3579,10 @@ function insertImageFile(file, note, bodyEl) {
       if (approxBytes > 900000) {
         showToast('That image is quite large even after compression — consider resizing it first', 'info');
       }
+      var beforeSelection = getEditorSelectionSnapshot(bodyEl);
       bodyEl.focus();
       document.execCommand('insertHTML', false, '<img src="' + dataUrl + '" class="note-image" alt="Image"><div><br></div>');
+      recordEditorHistoryChange(note, bodyEl, beforeSelection);
       note.body = serializeEditorBody(bodyEl);
       scheduleSave(note);
     };
@@ -3485,6 +3693,7 @@ function handleMarkdownShortcut(e, note, bodyEl) {
   else if (type === 'ol') document.execCommand('insertOrderedList', false, null);
   else if (type === 'checklist') insertChecklistItem();
 
+  recordEditorHistoryChange(note, bodyEl, getEditorSelectionSnapshot(bodyEl));
   note.body = serializeEditorBody(bodyEl);
   scheduleSave(note);
 }
