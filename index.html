@@ -295,6 +295,7 @@ input::placeholder { color: var(--text-tertiary); }
   width: var(--sidebar-w); flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border);
   display: flex; flex-direction: column; padding: var(--space-4) var(--space-3);
   transition: width var(--dur-base) var(--ease);
+  will-change: width;
 }
 .sidebar.collapsed { width: var(--sidebar-w-collapsed); }
 .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) var(--space-2) var(--space-5); gap: var(--space-2); transition: gap var(--dur-base) var(--ease); }
@@ -303,6 +304,7 @@ input::placeholder { color: var(--text-tertiary); }
   display: flex; align-items: center; gap: var(--space-2); overflow: hidden;
   max-width: 200px; opacity: 1;
   transition: opacity var(--dur-base) var(--ease), max-width var(--dur-base) var(--ease);
+  will-change: opacity, max-width;
 }
 .sidebar.collapsed .wordmark-group { opacity: 0; max-width: 0; pointer-events: none; }
 .brand-mark {
@@ -317,16 +319,17 @@ input::placeholder { color: var(--text-tertiary); }
   display: flex; align-items: center; gap: var(--space-3); padding: 10px 12px; border-radius: var(--radius-md);
   background: transparent; border: none; color: var(--text-secondary); font-size: 14px; font-weight: 500;
   cursor: pointer; text-align: left; width: 100%; position: relative;
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), gap var(--dur-base) var(--ease);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), gap var(--dur-base) var(--ease), padding var(--dur-base) var(--ease);
 }
 .nav-item:hover { background: var(--surface-2); color: var(--text-primary); }
 .nav-item.active { background: var(--accent); color: var(--accent-text); font-weight: 600; }
 .nav-icon-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
 .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
-.sidebar.collapsed .nav-item { justify-content: center; padding: 10px; gap: 0; }
+.sidebar.collapsed .nav-item { padding: 10px; gap: 0; }
 .nav-label {
   white-space: nowrap; overflow: hidden; max-width: 120px; opacity: 1;
   transition: opacity var(--dur-base) var(--ease), max-width var(--dur-base) var(--ease);
+  will-change: opacity, max-width;
 }
 .sidebar.collapsed .nav-label { opacity: 0; max-width: 0; }
 .nav-badge {
@@ -585,7 +588,7 @@ input::placeholder { color: var(--text-tertiary); }
    SETTINGS TAB
    ============================================================ */
 .settings-scroll { flex: 1; overflow-y: auto; }
-.settings-content { max-width: 620px; margin: 0 auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-6); }
+.settings-content { max-width: clamp(620px, 58vw, 880px); margin: 0 auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-6); }
 .settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-5); }
 .settings-section h2 { font-family: var(--font-display); font-size: 17px; font-weight: 550; margin-bottom: var(--space-4); }
 .setting-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; border-top: 1px solid var(--border); }
@@ -707,7 +710,7 @@ input::placeholder { color: var(--text-tertiary); }
   .sidebar.collapsed .sidebar-header { gap: var(--space-2); }
   .sidebar.collapsed .wordmark-group { opacity: 1; max-width: 200px; pointer-events: auto; }
   .sidebar.collapsed .nav-label { opacity: 1; max-width: 120px; }
-  .sidebar.collapsed .nav-item { gap: var(--space-3); }
+  .sidebar.collapsed .nav-item { gap: var(--space-3); padding: 10px 12px; }
   .sidebar.collapsed .sidebar-footer { height: 36px; }
   .sidebar.collapsed .footer-icon-btn:nth-child(1) { transform: translate(-62px, 0); }
   .sidebar.collapsed .footer-icon-btn:nth-child(2) { transform: translate(-18px, 0); }
@@ -850,11 +853,11 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.6.3';
+var APP_VERSION = '1.6.6';
 var CHANGELOG = [
-  { version: '1.6.3', date: 'Aug 2026', note: 'Fixed the fold button snapping instantly instead of animating smoothly with the wordmark.' },
-  { version: '1.6.2', date: 'Aug 2026', note: 'Fixed sidebar icon alignment, animated the footer icons during fold/unfold, and refreshed the theme icons.' },
-  { version: '1.6.1', date: 'Aug 2026', note: 'Smoother animations throughout — theme switching, modals, popovers, sidebar fold, and loading states.' }
+  { version: '1.6.6', date: 'Aug 2026', note: 'Settings panel now scales with wide screens instead of staying a fixed narrow width.' },
+  { version: '1.6.5', date: 'Aug 2026', note: 'Fixed the Notes/Trash icons snapping to center instead of animating smoothly when folding.' },
+  { version: '1.6.4', date: 'Aug 2026', note: 'Reduced reflow jank in Notes/Settings content when folding the sidebar.' }
 ];
 var TAG_COLORS = [
   { id: 'amber', label: 'Amber' },
