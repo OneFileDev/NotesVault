@@ -933,8 +933,9 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.9.7';
+var APP_VERSION = '1.9.8';
 var CHANGELOG = [
+  { version: '1.9.8', date: 'Aug 2026', note: 'Fixed image Copy: browsers only accept PNG on the clipboard (every image here is stored as JPEG), and the conversion was awaited before the write, which can lose the click\'s permission to use the clipboard at all. Now converts to PNG and writes synchronously within the click, and a failed copy now names the actual error.' },
   { version: '1.9.7', date: 'Aug 2026', note: 'Added image actions to the selection popover: Copy, Download, Replace, Remove, and Move earlier/later. Images sized to 25/50/75% now sit side by side instead of stacking, and pasting an image (e.g. a screenshot) inserts it directly. Also fixed a layout bug where inserting two images back to back could nest one inside the other instead of placing them as siblings.' },
   { version: '1.9.6', date: 'Aug 2026', note: 'Removed the rounded-square base from the browser tab icon too — the mark now fills the canvas directly for a bigger, bolder favicon (black on Light, white on Dark/AMOLED).' },
   { version: '1.9.5', date: 'Aug 2026', note: 'Removed the round/square badge behind the logo everywhere (lock screen, sidebar, About) — the bare mark now colors itself per theme: black in Light, white in Dark, and gold, platinum, or dim white across the three AMOLED accents.' },
@@ -3842,31 +3843,44 @@ function moveSelectedImage(dir) {
   }
   requestAnimationFrame(positionImageResizePopover);
 }
-function dataUrlToBlob(dataUrl) {
-  var comma = dataUrl.indexOf(',');
-  var meta = dataUrl.slice(0, comma);
-  var mimeMatch = meta.match(/^data:([^;]+);base64$/);
-  var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-  var binary = atob(dataUrl.slice(comma + 1));
-  var bytes = new Uint8Array(binary.length);
-  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
+function imageElementToPngBlob(img) {
+  return new Promise(function (resolve, reject) {
+    var canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    if (!canvas.width || !canvas.height) { reject(new Error('Image has no dimensions')); return; }
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    canvas.toBlob(function (blob) {
+      if (blob) resolve(blob); else reject(new Error('Canvas toBlob failed'));
+    }, 'image/png');
+  });
 }
-async function copyImageToClipboard(img) {
+function copyImageToClipboard(img) {
   if (!img || !img.src) return;
   if (!navigator.clipboard || !window.ClipboardItem) {
     showToast('Copying images isn\'t supported in this browser', 'info');
     return;
   }
-  try {
-    var blob = dataUrlToBlob(img.src);
-    var item = {};
-    item[blob.type] = blob;
-    await navigator.clipboard.write([new ClipboardItem(item)]);
+  /* Two things make image copy finicky and both matter here:
+     1) Browsers' Clipboard API only accepts image/png for image writes (not
+        jpeg, which is what every image here is compressed to on insert), so
+        the image is re-encoded to PNG at copy time — see loadAndCompressImage
+        for why storage itself stays JPEG.
+     2) clipboard.write() must be called synchronously within the click's user
+        gesture. Awaiting the PNG conversion first (canvas.toBlob resolves on
+        a later task, not a microtask) crosses that boundary and the write
+        gets silently rejected even for a completely genuine click. So write()
+        is called immediately, right here, with the still-pending Promise<Blob>
+        passed straight through as the ClipboardItem's value — the browser
+        awaits it internally without losing the gesture that authorized the
+        write in the first place. */
+  var pngPromise = imageElementToPngBlob(img);
+  navigator.clipboard.write([new ClipboardItem({ 'image/png': pngPromise })]).then(function () {
     showToast('Image copied', 'success');
-  } catch (err) {
-    showToast('Could not copy the image', 'danger');
-  }
+  }).catch(function (err) {
+    showToast('Could not copy the image' + (err && err.name ? ' (' + err.name + ')' : ''), 'danger');
+  });
 }
 function downloadImage(img, note) {
   if (!img || !img.src) return;
