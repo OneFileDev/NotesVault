@@ -589,14 +589,35 @@ input::placeholder { color: var(--text-tertiary); }
 .code-block code { font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; white-space: pre; }
 .note-image { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); margin: 0.6em 0; display: block; box-shadow: var(--shadow-sm); }
 .note-image.is-selected { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
-.image-resize-popover { position: fixed; z-index: 80; display: flex; align-items: center; gap: 6px; padding: 7px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); }
+/* Images sized down via the resize popover flow inline instead of stacking,
+   so two or more small images can sit side by side. The blank line the
+   editor normally leaves after an image is hidden right after an inline
+   image so it doesn't force a line break before the next one — purely
+   visual (display: none), the underlying note content is unchanged. */
+.note-image.inline-flow { display: inline-block; vertical-align: top; margin: 0.4em 8px 0.4em 0; }
+.note-image.inline-flow + div:has(> br:only-child) { display: none; }
+.image-resize-popover {
+  position: fixed; z-index: 80; display: flex; flex-direction: column; gap: 6px;
+  padding: 7px; background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+}
 .image-resize-popover[hidden] { display: none; }
+.image-popover-row { display: flex; align-items: center; gap: 6px; }
+.image-popover-actions { padding-top: 6px; border-top: 1px solid var(--border); }
+.image-popover-sep { width: 1px; height: 22px; background: var(--border); margin: 0 var(--space-2); flex-shrink: 0; }
 .image-resize-label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); padding: 0 4px; }
 .image-resize-btn { min-width: 34px; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-secondary); font-size: 12px; font-weight: 700; cursor: pointer; }
 .image-resize-btn:hover { background: var(--surface); color: var(--text-primary); border-color: var(--border-strong); }
 .image-resize-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--border-strong); }
 .image-resize-btn.reset { min-width: 48px; }
-@media (max-width: 700px) { .image-resize-popover { max-width: calc(100vw - 24px); overflow-x: auto; } }
+.image-action-btn {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-secondary); cursor: pointer;
+}
+.image-action-btn:hover { background: var(--surface); color: var(--text-primary); border-color: var(--border-strong); }
+.image-action-btn svg { width: 15px; height: 15px; }
+.image-action-btn.danger:hover { background: var(--danger-tint); color: var(--danger); border-color: var(--danger); }
+@media (max-width: 700px) { .image-resize-popover { max-width: calc(100vw - 24px); } .image-popover-row { overflow-x: auto; } }
 .editor-meta { padding: var(--space-3) var(--space-6); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-tertiary); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
 
 /* Syntax highlighting — muted, theme-adaptive token colors rather than an off-the-shelf
@@ -912,8 +933,9 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.9.6';
+var APP_VERSION = '1.9.7';
 var CHANGELOG = [
+  { version: '1.9.7', date: 'Aug 2026', note: 'Added image actions to the selection popover: Copy, Download, Replace, Remove, and Move earlier/later. Images sized to 25/50/75% now sit side by side instead of stacking, and pasting an image (e.g. a screenshot) inserts it directly. Also fixed a layout bug where inserting two images back to back could nest one inside the other instead of placing them as siblings.' },
   { version: '1.9.6', date: 'Aug 2026', note: 'Removed the rounded-square base from the browser tab icon too — the mark now fills the canvas directly for a bigger, bolder favicon (black on Light, white on Dark/AMOLED).' },
   { version: '1.9.5', date: 'Aug 2026', note: 'Removed the round/square badge behind the logo everywhere (lock screen, sidebar, About) — the bare mark now colors itself per theme: black in Light, white in Dark, and gold, platinum, or dim white across the three AMOLED accents.' },
   { version: '1.9.4', date: 'Aug 2026', note: 'The browser tab icon now switches to black-on-white to match Light theme, and back for Dark/AMOLED.' },
@@ -2782,6 +2804,14 @@ function normalizeChecklistState(container) {
   });
   return changed;
 }
+function normalizeImageLayout(container) {
+  if (!container) return;
+  $all('.note-image', container).forEach(function (img) {
+    var width = (img.style && img.style.width) || '';
+    var sizedDown = /^(25|50|75)%$/.test(width) || /^calc\(\s*(25|50|75)%\s*-\s*8px\s*\)$/.test(width);
+    img.classList.toggle('inline-flow', sizedDown);
+  });
+}
 function findNoteByTitle(title) {
   var q = (title || '').trim().toLowerCase();
   if (!q) return null;
@@ -3375,6 +3405,8 @@ function renderEditor() {
   var bodyEl = $('#editor-body');
   normalizeWikiLinks(bodyEl);
   normalizeChecklistState(bodyEl);
+  hoistNestedImages(bodyEl);
+  normalizeImageLayout(bodyEl);
   if (serializeEditorBody(bodyEl) !== note.body) { note.body = serializeEditorBody(bodyEl); persistNoteImmediate(note); }
   resetEditorHistory(note, bodyEl, true);
   highlightCodeBlocks(bodyEl);
@@ -3448,8 +3480,20 @@ function renderEditor() {
     renderLinkedNotes(note);
   });
   on(bodyEl, 'paste', function (e) {
-    e.preventDefault();
     var cd = e.clipboardData || window.clipboardData;
+    var imageFile = null;
+    if (cd && cd.files && cd.files.length) {
+      for (var i = 0; i < cd.files.length; i++) {
+        if (cd.files[i].type.indexOf('image/') === 0) { imageFile = cd.files[i]; break; }
+      }
+    }
+    if (!imageFile && cd && cd.items) {
+      for (var j = 0; j < cd.items.length; j++) {
+        if (cd.items[j].kind === 'file' && cd.items[j].type.indexOf('image/') === 0) { imageFile = cd.items[j].getAsFile(); break; }
+      }
+    }
+    e.preventDefault();
+    if (imageFile) { insertImageFile(imageFile, note, bodyEl); return; }
     var html = cd && cd.getData ? cd.getData('text/html') : '';
     var text = cd && cd.getData ? cd.getData('text/plain') : '';
     var insertHtml = html ? sanitizeNoteHtml(html) : escapeHtml(text || '').replace(/\r\n|\r|\n/g, '<br>');
@@ -3461,6 +3505,7 @@ function renderEditor() {
     var wc = $('#editor-wordcount'); if (wc) wc.textContent = computeWordCountText(note.body);
     normalizeWikiLinks(bodyEl);
     normalizeChecklistState(bodyEl);
+    normalizeImageLayout(bodyEl);
     highlightCodeBlocks(bodyEl);
     renderLinkedNotes(note);
   });
@@ -3506,6 +3551,7 @@ function renderEditor() {
     bodyEl.focus();
   });
   on($('#editor-image-btn'), 'click', function () {
+    pendingImageReplaceTarget = null;
     pendingImageTarget = { note: note, bodyEl: bodyEl };
     $('#editor-image-input').click();
   });
@@ -3607,6 +3653,7 @@ function computeWordCountText(body) {
    (see saveNoteRecord). Every image is resized to a reasonable max dimension and
    re-encoded as JPEG before being embedded, regardless of source format. */
 var pendingImageTarget = null;
+var pendingImageReplaceTarget = null;
 var selectedImageEl = null;
 var selectedImageBodyEl = null;
 
@@ -3614,8 +3661,11 @@ function getImageResizeMode(img) {
   if (!img) return 'auto';
   var width = (img.style && img.style.width) || '';
   if (!width) return 'auto';
-  var match = width.match(/^(25|50|75|100)%$/);
-  return match ? match[1] : 'custom';
+  var plain = width.match(/^(25|50|75|100)%$/);
+  if (plain) return plain[1];
+  var calc = width.match(/^calc\(\s*(25|50|75)%\s*-\s*8px\s*\)$/);
+  if (calc) return calc[1];
+  return 'custom';
 }
 function updateImageResizeButton() {
   var btn = $('#editor-image-resize-btn');
@@ -3650,17 +3700,35 @@ function showImageResizePopover(img, bodyEl) {
   var pop = $('#image-resize-popover');
   if (!pop) return;
   var mode = getImageResizeMode(img);
-  pop.innerHTML = '<span class="image-resize-label">Size</span>' +
-    ['25','50','75','100'].map(function (v) { return '<button type="button" class="image-resize-btn' + (mode === v ? ' active' : '') + '" data-image-size="' + v + '" aria-label="Set image width to ' + v + ' percent">' + v + '%</button>'; }).join('') +
-    '<button type="button" class="image-resize-btn reset" data-image-size="auto" aria-label="Reset image size">Auto</button>';
+  pop.innerHTML =
+    '<div class="image-popover-row">' +
+      '<span class="image-resize-label">Size</span>' +
+      ['25','50','75','100'].map(function (v) { return '<button type="button" class="image-resize-btn' + (mode === v ? ' active' : '') + '" data-image-size="' + v + '" aria-label="Set image width to ' + v + ' percent">' + v + '%</button>'; }).join('') +
+      '<button type="button" class="image-resize-btn reset' + (mode === 'auto' ? ' active' : '') + '" data-image-size="auto" aria-label="Reset image size">Auto</button>' +
+    '</div>' +
+    '<div class="image-popover-row image-popover-actions">' +
+      '<button type="button" class="image-action-btn" data-image-action="move-left" aria-label="Move image earlier" title="Move earlier"><i data-lucide="move-left"></i></button>' +
+      '<button type="button" class="image-action-btn" data-image-action="move-right" aria-label="Move image later" title="Move later"><i data-lucide="move-right"></i></button>' +
+      '<span class="image-popover-sep"></span>' +
+      '<button type="button" class="image-action-btn" data-image-action="copy" aria-label="Copy image" title="Copy image"><i data-lucide="copy"></i></button>' +
+      '<button type="button" class="image-action-btn" data-image-action="download" aria-label="Download image" title="Download image"><i data-lucide="download"></i></button>' +
+      '<button type="button" class="image-action-btn" data-image-action="replace" aria-label="Replace image" title="Replace image"><i data-lucide="refresh-cw"></i></button>' +
+      '<button type="button" class="image-action-btn danger" data-image-action="remove" aria-label="Remove image" title="Remove image"><i data-lucide="trash-2"></i></button>' +
+    '</div>';
   pop.hidden = false;
   $all('.image-resize-btn', pop).forEach(function (btn) {
     on(btn, 'mousedown', function (e) { e.preventDefault(); });
     on(btn, 'click', function () {
       if (!selectedImageEl) return;
       var size = btn.getAttribute('data-image-size');
-      if (size === 'auto') selectedImageEl.style.removeProperty('width');
-      else selectedImageEl.style.width = size + '%';
+      if (size === 'auto' || size === '100') {
+        if (size === '100') selectedImageEl.style.width = '100%';
+        else selectedImageEl.style.removeProperty('width');
+        selectedImageEl.classList.remove('inline-flow');
+      } else {
+        selectedImageEl.style.width = 'calc(' + size + '% - 8px)';
+        selectedImageEl.classList.add('inline-flow');
+      }
       selectedImageEl.style.height = 'auto';
       var noteId = selectedImageBodyEl && selectedImageBodyEl.getAttribute('data-note-id');
       var note = noteId ? findNote(noteId) : (selectedNoteId ? findNote(selectedNoteId) : null);
@@ -3673,7 +3741,12 @@ function showImageResizePopover(img, bodyEl) {
       showImageResizePopover(selectedImageEl, selectedImageBodyEl);
     });
   });
+  $all('.image-action-btn', pop).forEach(function (btn) {
+    on(btn, 'mousedown', function (e) { e.preventDefault(); });
+    on(btn, 'click', function () { handleImageAction(btn.getAttribute('data-image-action')); });
+  });
   updateImageResizeButton();
+  icons();
   requestAnimationFrame(positionImageResizePopover);
 }
 function toggleImageResizePopover() {
@@ -3683,8 +3756,12 @@ function toggleImageResizePopover() {
   if (pop.hidden) showImageResizePopover(selectedImageEl, selectedImageBodyEl);
   else closeImageResizePopover(false);
 }
-function insertImageFile(file, note, bodyEl) {
-  if (!file || file.type.indexOf('image/') !== 0) { showToast('Please choose an image file', 'danger'); return; }
+function loadAndCompressImage(file, onDone, onError) {
+  if (!file || file.type.indexOf('image/') !== 0) {
+    showToast('Please choose an image file', 'danger');
+    if (onError) onError();
+    return;
+  }
   var reader = new FileReader();
   reader.onload = function () {
     var img = new Image();
@@ -3705,18 +3782,156 @@ function insertImageFile(file, note, bodyEl) {
       if (approxBytes > 900000) {
         showToast('That image is quite large even after compression — consider resizing it first', 'info');
       }
-      var beforeSelection = getEditorSelectionSnapshot(bodyEl);
-      bodyEl.focus();
-      document.execCommand('insertHTML', false, '<img src="' + dataUrl + '" class="note-image" alt="Image"><div><br></div>');
-      recordEditorHistoryChange(note, bodyEl, beforeSelection);
-      note.body = serializeEditorBody(bodyEl);
-      scheduleSave(note);
+      onDone(dataUrl);
     };
-    img.onerror = function () { showToast('Could not read that image', 'danger'); };
+    img.onerror = function () { showToast('Could not read that image', 'danger'); if (onError) onError(); };
     img.src = reader.result;
   };
-  reader.onerror = function () { showToast('Could not read that image', 'danger'); };
+  reader.onerror = function () { showToast('Could not read that image', 'danger'); if (onError) onError(); };
   reader.readAsDataURL(file);
+}
+/* Reorder: swaps the image past the next/previous element that actually
+   matters, skipping the blank "<div><br></div>" line the editor leaves
+   after every inserted image — otherwise one click would just swap an
+   image with an invisible blank line and appear to do nothing. */
+function isTrivialImageSpacer(node) {
+  if (!node || node.nodeType !== 1) return false;
+  if (node.tagName !== 'DIV' && node.tagName !== 'P') return false;
+  if (node.querySelector && node.querySelector('img, input, ul, ol, pre')) return false;
+  return node.textContent.replace(/\u00a0/g, ' ').trim() === '';
+}
+function hoistNestedImages(container) {
+  var changed = false;
+  var again = true;
+  while (again) {
+    again = false;
+    $all('.note-image', container).forEach(function (img) {
+      var parent = img.parentNode;
+      if (!parent || parent === container) return;
+      if (parent.nodeType === 1 && (parent.tagName === 'DIV' || parent.tagName === 'P') && parent.parentNode) {
+        parent.parentNode.insertBefore(img, parent);
+        changed = true;
+        again = true;
+      }
+    });
+  }
+  $all('div, p', container).forEach(function (node) {
+    if (isTrivialImageSpacer(node) && node.children.length > 0) { node.innerHTML = '<br>'; changed = true; }
+  });
+  return changed;
+}
+function findImageReorderTarget(img, dir) {
+  var sib = dir > 0 ? img.nextElementSibling : img.previousElementSibling;
+  while (sib && isTrivialImageSpacer(sib)) sib = dir > 0 ? sib.nextElementSibling : sib.previousElementSibling;
+  return sib;
+}
+function moveSelectedImage(dir) {
+  if (!selectedImageEl || !selectedImageBodyEl) return;
+  var img = selectedImageEl, bodyEl = selectedImageBodyEl;
+  var target = findImageReorderTarget(img, dir);
+  if (!target) { showToast(dir > 0 ? 'Already the last item' : 'Already the first item', 'info'); return; }
+  var noteId = bodyEl.getAttribute('data-note-id');
+  var note = noteId ? findNote(noteId) : (selectedNoteId ? findNote(selectedNoteId) : null);
+  var beforeSelection = getEditorSelectionSnapshot(bodyEl);
+  if (dir > 0) target.parentNode.insertBefore(target, img);
+  else target.parentNode.insertBefore(img, target);
+  if (note) {
+    recordEditorHistoryChange(note, bodyEl, beforeSelection);
+    note.body = serializeEditorBody(bodyEl);
+    scheduleSave(note);
+  }
+  requestAnimationFrame(positionImageResizePopover);
+}
+function dataUrlToBlob(dataUrl) {
+  var comma = dataUrl.indexOf(',');
+  var meta = dataUrl.slice(0, comma);
+  var mimeMatch = meta.match(/^data:([^;]+);base64$/);
+  var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+  var binary = atob(dataUrl.slice(comma + 1));
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+async function copyImageToClipboard(img) {
+  if (!img || !img.src) return;
+  if (!navigator.clipboard || !window.ClipboardItem) {
+    showToast('Copying images isn\'t supported in this browser', 'info');
+    return;
+  }
+  try {
+    var blob = dataUrlToBlob(img.src);
+    var item = {};
+    item[blob.type] = blob;
+    await navigator.clipboard.write([new ClipboardItem(item)]);
+    showToast('Image copied', 'success');
+  } catch (err) {
+    showToast('Could not copy the image', 'danger');
+  }
+}
+function downloadImage(img, note) {
+  if (!img || !img.src) return;
+  var safeName = (note && note.title && note.title.trim() ? note.title.trim() : 'image').replace(/[\\/:*?"<>|]/g, '-').slice(0, 60);
+  var a = document.createElement('a');
+  a.href = img.src;
+  a.download = safeName + '-' + Date.now() + '.jpg';
+  document.body.appendChild(a); a.click(); a.remove();
+  showToast('Image downloaded', 'success');
+}
+function removeSelectedImage() {
+  if (!selectedImageEl || !selectedImageBodyEl) return;
+  var img = selectedImageEl, bodyEl = selectedImageBodyEl;
+  var noteId = bodyEl.getAttribute('data-note-id');
+  var note = noteId ? findNote(noteId) : (selectedNoteId ? findNote(selectedNoteId) : null);
+  var beforeSelection = getEditorSelectionSnapshot(bodyEl);
+  img.remove();
+  closeImageResizePopover(true);
+  if (note) {
+    recordEditorHistoryChange(note, bodyEl, beforeSelection);
+    note.body = serializeEditorBody(bodyEl);
+    scheduleSave(note);
+  }
+  bodyEl.focus();
+}
+function handleImageAction(action) {
+  if (!selectedImageEl || !selectedImageBodyEl) return;
+  var img = selectedImageEl, bodyEl = selectedImageBodyEl;
+  var noteId = bodyEl.getAttribute('data-note-id');
+  var note = noteId ? findNote(noteId) : (selectedNoteId ? findNote(selectedNoteId) : null);
+  if (action === 'move-left') { moveSelectedImage(-1); return; }
+  if (action === 'move-right') { moveSelectedImage(1); return; }
+  if (action === 'copy') { copyImageToClipboard(img); return; }
+  if (action === 'download') { downloadImage(img, note); return; }
+  if (action === 'replace') { pendingImageTarget = null; pendingImageReplaceTarget = { img: img, note: note, bodyEl: bodyEl }; $('#editor-image-input').click(); return; }
+  if (action === 'remove') { removeSelectedImage(); return; }
+}
+function insertImageFile(file, note, bodyEl) {
+  loadAndCompressImage(file, function (dataUrl) {
+    var beforeSelection = getEditorSelectionSnapshot(bodyEl);
+    bodyEl.focus();
+    document.execCommand('insertHTML', false, '<img src="' + dataUrl + '" class="note-image" alt="Image"><div><br></div>');
+    hoistNestedImages(bodyEl);
+    var r = document.createRange();
+    r.selectNodeContents(bodyEl);
+    r.collapse(false);
+    var s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+    recordEditorHistoryChange(note, bodyEl, beforeSelection);
+    note.body = serializeEditorBody(bodyEl);
+    scheduleSave(note);
+  });
+}
+function replaceImageFile(file, img, note, bodyEl) {
+  if (!img || !note || !bodyEl) return;
+  loadAndCompressImage(file, function (dataUrl) {
+    var beforeSelection = getEditorSelectionSnapshot(bodyEl);
+    img.src = dataUrl;
+    recordEditorHistoryChange(note, bodyEl, beforeSelection);
+    note.body = serializeEditorBody(bodyEl);
+    scheduleSave(note);
+    showToast('Image replaced', 'success');
+    requestAnimationFrame(positionImageResizePopover);
+  });
 }
 
 /* Markdown export — walks the note's own limited HTML vocabulary (this editor's
@@ -4579,9 +4794,18 @@ function bindGlobalEvents() {
   on($('#lock-btn'), 'click', function () { lockVault('manual'); });
   on($('#editor-image-input'), 'change', function (e) {
     var file = e.target.files[0];
-    if (file && pendingImageTarget) insertImageFile(file, pendingImageTarget.note, pendingImageTarget.bodyEl);
+    if (file && pendingImageReplaceTarget) {
+      replaceImageFile(file, pendingImageReplaceTarget.img, pendingImageReplaceTarget.note, pendingImageReplaceTarget.bodyEl);
+    } else if (file && pendingImageTarget) {
+      insertImageFile(file, pendingImageTarget.note, pendingImageTarget.bodyEl);
+    }
     pendingImageTarget = null;
+    pendingImageReplaceTarget = null;
     e.target.value = '';
+  });
+  on($('#editor-image-input'), 'cancel', function () {
+    pendingImageTarget = null;
+    pendingImageReplaceTarget = null;
   });
 
   on(document, 'keydown', function (e) {
@@ -4604,7 +4828,7 @@ function bindGlobalEvents() {
   on(document, 'click', function (e) {
     var pop = $('#image-resize-popover');
     if (!pop || pop.hidden) return;
-    if (e.target.closest && (e.target.closest('#image-resize-popover') || e.target.closest('.note-image') || e.target.closest('#editor-image-resize-btn'))) return;
+    if (e.target.closest && (e.target.closest('#image-resize-popover') || e.target.closest('.note-image') || e.target.closest('#editor-image-resize-btn') || e.target.closest('#editor-image-input'))) return;
     closeImageResizePopover(true);
   });
   window.addEventListener('resize', function () {
