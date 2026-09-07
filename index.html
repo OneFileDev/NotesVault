@@ -933,8 +933,9 @@ input::placeholder { color: var(--text-tertiary); }
    ============================================================ */
 var PBKDF2_ITERATIONS = 300000;
 var TRASH_RETENTION_DAYS = 30;
-var APP_VERSION = '1.9.8';
+var APP_VERSION = '1.9.9';
 var CHANGELOG = [
+  { version: '1.9.9', date: 'Aug 2026', note: 'Backspace at the start of a numbered, bulleted, or checklist line now removes just that line\'s marker instead of the browser\'s default behavior. Also fixed a numbering glitch: removing a marker from the middle of a numbered list could reset the numbers after it back to 1 — they now continue correctly.' },
   { version: '1.9.8', date: 'Aug 2026', note: 'Fixed image Copy: browsers only accept PNG on the clipboard (every image here is stored as JPEG), and the conversion was awaited before the write, which can lose the click\'s permission to use the clipboard at all. Now converts to PNG and writes synchronously within the click, and a failed copy now names the actual error.' },
   { version: '1.9.7', date: 'Aug 2026', note: 'Added image actions to the selection popover: Copy, Download, Replace, Remove, and Move earlier/later. Images sized to 25/50/75% now sit side by side instead of stacking, and pasting an image (e.g. a screenshot) inserts it directly. Also fixed a layout bug where inserting two images back to back could nest one inside the other instead of placing them as siblings.' },
   { version: '1.9.6', date: 'Aug 2026', note: 'Removed the rounded-square base from the browser tab icon too — the mark now fills the canvas directly for a bigger, bolder favicon (black on Light, white on Dark/AMOLED).' },
@@ -3602,6 +3603,27 @@ function renderEditor() {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chooseWikiAutocomplete(wikiAutocompleteState.index); return; }
       if (e.key === 'Escape') { e.preventDefault(); closeWikiAutocomplete(); return; }
     }
+    if (e.key === 'Backspace' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      var bsSel = window.getSelection();
+      if (bsSel && bsSel.rangeCount) {
+        var bsRange = bsSel.getRangeAt(0);
+        if (bsRange.collapsed) {
+          var bsEl = bsRange.startContainer.nodeType === 1 ? bsRange.startContainer : bsRange.startContainer.parentElement;
+          var bsLi = bsEl ? bsEl.closest('li') : null;
+          var bsChecklistItem = bsEl ? bsEl.closest('.checklist-item') : null;
+          if (bsLi && bodyEl.contains(bsLi) && isCaretAtBlockStart(bsRange, bsLi)) {
+            e.preventDefault();
+            unwrapListItemAtCaret(bsLi, note, bodyEl);
+            return;
+          }
+          if (bsChecklistItem && bodyEl.contains(bsChecklistItem) && isCaretAtBlockStart(bsRange, bsChecklistItem)) {
+            e.preventDefault();
+            unwrapChecklistItemAtCaret(bsChecklistItem, note, bodyEl);
+            return;
+          }
+        }
+      }
+    }
     handleMarkdownShortcut(e, note, bodyEl);
   });
   on(bodyEl, 'blur', function () {
@@ -3621,6 +3643,117 @@ function renderEditor() {
 
 function insertChecklistItem() {
   document.execCommand('insertHTML', false, '<div class="checklist-item"><input type="checkbox" class="checklist-checkbox">&nbsp;</div>');
+}
+/* ============================================================
+   REMOVING A LIST MARKER (Backspace at the start of a line)
+   Lets Backspace, pressed right at the start of a numbered/bulleted/checklist
+   line, strip just that line's marker instead of merging with the previous
+   line or leaving the browser's default (sometimes destructive) behavior to
+   run. See isCaretAtBlockStart for what counts as "start of the line" — it
+   correctly treats the position right after a checklist item's checkbox as
+   the start, not just literal offset 0.
+   ============================================================ */
+function isCaretAtBlockStart(range, blockEl) {
+  if (!range.collapsed) return false;
+  var preRange = document.createRange();
+  preRange.selectNodeContents(blockEl);
+  preRange.setEnd(range.startContainer, range.startOffset);
+  return preRange.toString().replace(/\u00a0/g, ' ').trim() === '';
+}
+function isLooseInlineNode(n) {
+  if (!n) return false;
+  if (n.nodeType === 3) return true;
+  if (n.nodeType === 1) return n.tagName === 'BR' || /^(B|STRONG|I|EM|U|A|SPAN|CODE)$/.test(n.tagName);
+  return false;
+}
+function resolveCaretPosNode(caretNode, caretOffset) {
+  if (caretNode.nodeType === 3) return caretNode;
+  return caretNode.childNodes[caretOffset] || (caretOffset > 0 ? caretNode.childNodes[caretOffset - 1] : null) || caretNode;
+}
+/* Toggling insertOrderedList/insertUnorderedList off for one item in the
+   middle of a list leaves the unwrapped line as a bare text/br node sitting
+   directly in bodyEl (confirmed empirically), not wrapped in a block element
+   like every other line in this editor — this finds that loose run at the
+   caret and wraps it in a <div>, preserving the caret position. */
+function wrapLooseCaretRun(bodyEl) {
+  var sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return null;
+  var range = sel.getRangeAt(0);
+  var caretNode = range.startContainer, caretOffset = range.startOffset;
+  var useNodeOffsetRestore = caretNode.nodeType === 3;
+  var top = resolveCaretPosNode(caretNode, caretOffset);
+  while (top && top.parentNode && top.parentNode !== bodyEl) top = top.parentNode;
+  if (!top || top === bodyEl || !isLooseInlineNode(top)) return null;
+  var nodes = [top];
+  var p = top.previousSibling;
+  while (p && isLooseInlineNode(p)) { nodes.unshift(p); p = p.previousSibling; }
+  var n = top.nextSibling;
+  while (n && isLooseInlineNode(n)) { nodes.push(n); n = n.nextSibling; }
+  var div = document.createElement('div');
+  bodyEl.insertBefore(div, nodes[0]);
+  nodes.forEach(function (nd) { div.appendChild(nd); });
+  if (!div.textContent.replace(/\u00a0/g, ' ').trim() && !div.querySelector('br')) div.appendChild(document.createElement('br'));
+  try {
+    var r = document.createRange();
+    if (useNodeOffsetRestore && div.contains(caretNode)) r.setStart(caretNode, Math.min(caretOffset, caretNode.nodeValue.length));
+    else r.setStart(div, 0);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  } catch (e) { /* best effort */ }
+  return div;
+}
+/* Confirmed via testing: unwrapping a middle <ol> item splits the list into
+   two separate <ol> elements, and the second one is NOT given a start
+   attribute — it silently renumbers from 1 instead of continuing, which is
+   exactly the numbering glitch this needs to auto-correct. */
+function fixSplitOrderedListNumbering(div) {
+  if (!div) return;
+  var prevOl = div.previousElementSibling, nextOl = div.nextElementSibling;
+  if (prevOl && prevOl.tagName === 'OL' && nextOl && nextOl.tagName === 'OL') {
+    var prevStart = parseInt(prevOl.getAttribute('start'), 10) || 1;
+    nextOl.setAttribute('start', String(prevStart + prevOl.children.length));
+  }
+}
+function unwrapListItemAtCaret(li, note, bodyEl) {
+  var isOrdered = li.parentElement && li.parentElement.tagName === 'OL';
+  document.execCommand(isOrdered ? 'insertOrderedList' : 'insertUnorderedList', false, null);
+  var div = wrapLooseCaretRun(bodyEl);
+  if (isOrdered) fixSplitOrderedListNumbering(div);
+  recordEditorHistoryChange(note, bodyEl, getEditorSelectionSnapshot(bodyEl));
+  note.body = serializeEditorBody(bodyEl);
+  scheduleSave(note);
+}
+function unwrapChecklistItemAtCaret(item, note, bodyEl) {
+  var sel = window.getSelection();
+  var range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+  var caretNode = range ? range.startContainer : null;
+  var caretOffset = range ? range.startOffset : 0;
+  var div = document.createElement('div');
+  Array.prototype.slice.call(item.childNodes).forEach(function (child) {
+    if (child.nodeType === 1 && child.classList && child.classList.contains('checklist-checkbox')) return;
+    div.appendChild(child);
+  });
+  if (div.firstChild && div.firstChild.nodeType === 3) {
+    var before = div.firstChild.textContent;
+    div.firstChild.textContent = before.replace(/^\u00a0+/, '');
+    if (caretNode === div.firstChild && before !== div.firstChild.textContent) {
+      caretOffset = Math.max(0, caretOffset - (before.length - div.firstChild.textContent.length));
+    }
+  }
+  if (!div.textContent.replace(/\u00a0/g, ' ').trim() && !div.querySelector('img,br')) div.innerHTML = '<br>';
+  item.parentNode.replaceChild(div, item);
+  try {
+    var r = document.createRange();
+    if (caretNode && div.contains(caretNode)) r.setStart(caretNode, Math.min(caretOffset, caretNode.nodeType === 3 ? caretNode.nodeValue.length : caretNode.childNodes.length));
+    else r.setStart(div, 0);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  } catch (e) { /* best effort */ }
+  recordEditorHistoryChange(note, bodyEl, getEditorSelectionSnapshot(bodyEl));
+  note.body = serializeEditorBody(bodyEl);
+  scheduleSave(note);
 }
 function insertCodeBlock() {
   var sel = window.getSelection();
